@@ -120,6 +120,9 @@ details[open] .chev{transform:rotate(90deg)}
 @media(max-width:360px){.cimg{width:60px;height:60px}.card:not(.car) .cimg{width:88px;height:88px}}
 .rings .kv{min-width:118px}.rings .kv dd{white-space:nowrap}
 @media(max-width:440px){.rings{flex-wrap:wrap}}
+.fc{margin-top:14px;padding:12px 14px;border-radius:16px;background:var(--glass2,rgba(127,127,127,.08));border:1px solid var(--line);display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:2px 12px}
+.fc .fl{color:var(--tx3);font-size:11.5px;font-weight:650;letter-spacing:.5px;text-transform:uppercase;grid-row:span 3}
+.fc b{font-size:20px;font-weight:750;letter-spacing:-.3px}.fc small{grid-column:2;color:var(--tx2);font-size:12.5px}
 .tag.chk{background:rgba(245,165,36,.18);color:var(--amber)}
 .phs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.phs .th{width:64px;height:64px;border-radius:12px;border:1px solid var(--line);background:var(--glass) center/cover no-repeat;cursor:pointer;display:grid;place-items:center;color:var(--tx3);font-size:10px;position:relative}
 .phs .th.q::after{content:'';position:absolute;right:4px;top:4px;width:8px;height:8px;border-radius:50%;background:var(--amber)}
@@ -219,6 +222,29 @@ function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { try { toa
 function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 function save() { lsSet(LS, JSON.stringify(CH)); }
 const cars = () => DATA.cars.map(c => model(c));
+/* прогноз ТО: берём из таблицы («ПРОГНОЗ ТО (что раньше)» + «Основание»), иначе считаем сами: 12 мес от даты ТО и пробег по среднему за месяц */
+function forecast(c, mil, svc, cur, next, lastKm) {
+  const months = +((String(c['Примечания'] || '').match(/(\d+)\s*мес/) || [])[1]) || 12;
+  let lastD = pd(c['Посл. ТО: дата']);
+  svc.filter(s => /плановое|^то/i.test(s.type || '')).forEach(s => { const d = pd(s.date); if (d && (!lastD || d > lastD) && +s.km >= lastKm) lastD = d; });
+  const xD = pd(c['ПРОГНОЗ ТО (что раньше)']), xB = String(c['Основание'] || '').trim();
+  const byDate = lastD ? new Date(lastD.getFullYear(), lastD.getMonth() + months, lastD.getDate()) : null;
+  let rate = typeof c['Ср. пробег/мес, км'] === 'number' ? c['Ср. пробег/мес, км'] : null;
+  if (!rate && lastD) { const m = (today() - lastD) / 864e5 / 30.4; if (m > 0.5 && cur > lastKm) rate = (cur - lastKm) / m; }
+  if (!rate) { const pts = mil.map(m => ({d: pd(m.date), km: +m.km})).filter(p => p.d && p.km).sort((a, b) => a.d - b.d);
+    if (pts.length > 1) { const a = pts[0], b = pts[pts.length - 1], m = (b.d - a.d) / 864e5 / 30.4; if (m > 0.5 && b.km > a.km) rate = (b.km - a.km) / m; } }
+  const byKm = rate ? new Date(+today() + Math.max(0, next - cur) / rate * 30.4 * 864e5) : null;
+  let date = null, basis = '', src = 'calc', byDateS = null, byKmS = null;
+  if (xD && !isNaN(xD)) { date = xD; basis = xB || ''; src = 'sheet'; const sD = pd(c['ТО по сроку (дата)']), sK = pd(c['ТО по пробегу (прогноз)']); if (sD) byDateS = sD; if (sK) byKmS = sK; }
+  else if (byDate && byKm) { date = byDate <= byKm ? byDate : byKm; basis = byDate <= byKm ? 'по сроку' : 'по пробегу'; }
+  else if (byDate) { date = byDate; basis = 'по сроку'; } else if (byKm) { date = byKm; basis = 'по пробегу'; }
+  const why = !date ? (String(c['ПРОГНОЗ ТО (что раньше)'] || '') || 'нужна дата прошлого ТО') : '';
+  return {date, basis, src, why, byDate: byDateS || byDate, byKm: byKmS || byKm, rate: rate ? Math.round(rate) : null, months, days: date ? Math.round((date - today()) / 864e5) : null}; }
+function fcBox(c, big) { const f = c.fc;
+  if (!f.date) return `<div class="fc"><span class="fl">Прогноз ТО</span><b class="s-amb">${esc(f.why)}</b><small>до ТО ${km(c.left)}${f.rate ? ' · ' + fmt(f.rate) + ' км/мес' : ''}</small></div>`;
+  const cls = f.days < 0 ? 's-red' : f.days <= 30 ? 's-amb' : 's-grn';
+  const det = big ? `<small>по сроку: ${f.byDate ? fd(f.byDate) : '—'} · по пробегу: ${f.byKm ? fd(f.byKm) : '—'}${f.rate ? ' · ' + fmt(f.rate) + ' км/мес' : ''}</small>` : '';
+  return `<div class="fc"><span class="fl">Прогноз ТО</span><b class="${cls}">${fd(f.date)}</b><small>${esc(f.basis || '')}${f.src === 'calc' ? ' (оценка приложения)' : ''}${f.basis ? ' · ' : ''}${f.days < 0 ? 'просрочено на ' + -f.days + ' дн.' : 'через ' + f.days + ' дн.'}</small>${det}</div>`; }
 function model(c) {
   const n = c['Машина'];
   const mil = [...DATA.mileage.filter(m => m['Машина'] === n).map(m => ({date: m['Дата'], km: m['Пробег, км'], note: m['Комментарий']})),
@@ -230,9 +256,10 @@ function model(c) {
   let lastTO = c['Посл. ТО: км'] || 0, next = c['След. ТО, км'];
   svc.filter(s => /плановое|^то/i.test(s.type || '')).forEach(s => { if (+s.km > lastTO) { lastTO = +s.km; next = s.next || lastTO + interval; } });
   if (!next) next = lastTO + interval;
+  const fc = forecast(c, mil, svc, cur, next, lastTO);
   mil.sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.km - a.km);
   svc.sort((a, b) => (b.km || 0) - (a.km || 0));
-  return {raw: c, name: n, plate: c['Госномер'], vin: c['VIN'], cur, next, left: next - cur, interval, lastTO, mil, svc, plan: DATA.plans[n]};
+  return {raw: c, name: n, plate: c['Госномер'], vin: c['VIN'], cur, next, left: next - cur, interval, lastTO, mil, svc, plan: DATA.plans[n], fc};
 }
 function insurance() { return DATA.insurance.map(p => ({car: p['Машина'], type: p['Тип'], co: p['Страховая'], num: p['Номер полиса'], from: pd(p['Начало']), to: pd(p['Окончание']), cost: p['Стоимость, ₽'], note: p['Примечание'], file: p['Полис (файл)']})); }
 function budget() { return [...DATA.budget.map(b => ({car: b['Машина'], item: b['Статья'], plan: b['План, ₽'], due: b['Срок'], fact: b['Факт, ₽'], status: b['Статус'], note: b['Комментарий']})),
@@ -275,6 +302,7 @@ function carCard(c) {
   const osago = insurance().find(p => p.car === c.name && p.type === 'ОСАГО'); const od = osago && osago.to ? days(osago.to) : null;
   return `<div class="glass card car" data-open="${esc(c.name)}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">${carImg(c.name) ? `<img class="cimg" src="${carImg(c.name)}" alt="" loading="lazy" decoding="async">` : ''}<div style="flex:1;min-width:0"><div class="nm">${esc(c.name)}</div><span class="plate">${esc(c.plate)}</span></div><span class="muted" style="color:var(--tx3)">${ic('chev')}</span></div>
+    ${fcBox(c, false)}
     <div class="rings">${ring(c.left, c.interval, stK(c.left), fmt(c.left), 'км до ТО')}
       ${od != null ? ring(od, 365, stD(od), od, 'дн. ОСАГО') : ''}
       <dl class="kv" style="flex:1;margin:0"><dt>Пробег</dt><dd>${km(c.cur)}</dd><dt>След. ТО</dt><dd>${km(c.next)}</dd></dl></div></div>`;
