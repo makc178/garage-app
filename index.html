@@ -183,11 +183,18 @@ const VAULT = (() => { const DB = 'makc178-vault', ST = 'kv';
   const persist = () => { try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {} };
   return {get: k => get(k).catch(() => null), set: (k, v) => put(k, v).catch(() => false), persist}; })();
 let DATA = /*__DATA__*/null;
-const LSN = 'garage.snapshot.v1';
+/* режим «свой гараж»: репозиторий не makc178/garage-data -> база JSON только в репозитории пользователя, без бота */
+const OWNER_REPO = 'makc178/garage-data';
+const OWN = (() => { try { const o = JSON.parse(localStorage.getItem('garage.gh.v1')); return !!(o && o.repo && o.repo.toLowerCase() !== OWNER_REPO); } catch (e) { return false; } })();
+const emptyDB = () => ({cars: [], mileage: [], service: [], budget: [], insurance: [], plans: {}, rates: [], applied: [], built: ''});
+const LSN = OWN ? 'garage.own.snapshot.v1' : 'garage.snapshot.v1';
+const DEFCAR = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><defs><clipPath id="c"><circle cx="100" cy="100" r="100"/></clipPath></defs><g clip-path="url(#c)"><rect width="200" height="200" fill="#e4e8ee"/><g fill="none" stroke="#c3cad5" stroke-width="2"><path d="M-10 40q60-25 110 0t120-5"/><path d="M-10 70q55-20 105 5t115-10"/><path d="M-10 160q60 20 110-5t120 10"/><path d="M-10 185q55 15 110-8t120 8"/></g><path d="M28 128h144v-14l-10-6-26-6-20-18H70l-20 20-16 4-6 6z" fill="#5d6b80"/><path d="M78 88h38l16 16H64z" fill="#aeb9c9"/><circle cx="62" cy="130" r="15" fill="#2c3442"/><circle cx="62" cy="130" r="6" fill="#aeb9c9"/><circle cx="140" cy="130" r="15" fill="#2c3442"/><circle cx="140" cy="130" r="6" fill="#aeb9c9"/></g></svg>');
 const CARIMG = {"ford-bronco": "cars/ford-bronco.webp", "land-rover-defender": "cars/land-rover-defender.webp", "range-rover-sport": "cars/range-rover-sport.webp"};
 const carImg = n => CARIMG[{'Land Rover Defender': 'land-rover-defender', 'Range Rover Sport': 'range-rover-sport', 'Ford Bronco': 'ford-bronco'}[n] || String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')];
+if (OWN) DATA = null;
 if (!DATA) { try { DATA = JSON.parse(localStorage.getItem(LSN)); } catch (e) {} }
-const LS = 'garage.changes.v1', LT = 'garage.theme';
+if (OWN && !(DATA && DATA.cars)) DATA = emptyDB();
+const LS = OWN ? 'garage.own.changes.v1' : 'garage.changes.v1', LT = 'garage.theme';
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = n => n == null || n === '' || isNaN(n) ? '—' : Math.round(n).toLocaleString('ru-RU').replace(/,/g, ' ');
@@ -233,7 +240,7 @@ function save() { lsSet(LS, JSON.stringify(CH)); }
 const cars = () => DATA.cars.map(c => model(c));
 /* прогноз ТО: берём из таблицы («ПРОГНОЗ ТО (что раньше)» + «Основание»), иначе считаем сами: 12 мес от даты ТО и пробег по среднему за месяц */
 function forecast(c, mil, svc, cur, next, lastKm) {
-  const months = +((String(c['Примечания'] || '').match(/(\d+)\s*мес/) || [])[1]) || 12;
+  const months = +c['Интервал ТО, мес'] || +((String(c['Примечания'] || '').match(/(\d+)\s*мес/) || [])[1]) || 12;
   let lastD = pd(c['Посл. ТО: дата']);
   svc.filter(s => /плановое|^то/i.test(s.type || '')).forEach(s => { const d = pd(s.date); if (d && (!lastD || d > lastD) && +s.km >= lastKm) lastD = d; });
   const xD = pd(c['ПРОГНОЗ ТО (что раньше)']), xB = String(c['Основание'] || '').trim();
@@ -311,16 +318,19 @@ const actions = car => `<div class="actions">
 function carCard(c) {
   const osago = insurance().find(p => p.car === c.name && p.type === 'ОСАГО'); const od = osago && osago.to ? days(osago.to) : null;
   return `<div class="glass card car" data-open="${esc(c.name)}">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">${carImg(c.name) ? `<img class="cimg" src="${carImg(c.name)}" alt="" loading="lazy" decoding="async">` : ''}<div style="flex:1;min-width:0"><div class="nm">${esc(c.name)}</div><span class="plate">${esc(c.plate)}</span></div><span class="muted" style="color:var(--tx3)">${ic('chev')}</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">${cimg(c)}<div style="flex:1;min-width:0"><div class="nm">${esc(c.name)}</div>${c.plate ? `<span class="plate">${esc(c.plate)}</span>` : ''}</div><span class="muted" style="color:var(--tx3)">${ic('chev')}</span></div>
     ${fcBox(c, false)}
     <div class="rings">${ring(c.left, c.interval, stK(c.left), fmt(c.left), 'км до ТО')}
       ${od != null ? ring(od, 365, stD(od), od, 'дн. ОСАГО') : ''}
       <dl class="kv" style="flex:1;margin:0"><dt>Пробег</dt><dd>${km(c.cur)}</dd><dt>След. ТО</dt><dd>${km(c.next)}</dd></dl></div></div>`;
 }
+function cimg(c) { const p = c.raw['Фото машины'];
+  if (p) return `<img class="cimg" data-ci="${esc(p)}" src="${DEFCAR}" alt="">`;
+  const u = carImg(c.name); return u ? `<img class="cimg" src="${u}" alt="" loading="lazy" decoding="async">` : OWN ? `<img class="cimg" src="${DEFCAR}" alt="">` : ''; }
 function vSum() {
   const {ev, to} = events(); const n = CH.mileage.length + CH.service.length + CH.budget.length;
   const total = budget().reduce((s, b) => s + (+b.plan || 0), 0);
-  return head('Гараж', `Таблица от ${esc(String(DATA.built).slice(8,10) + '.' + String(DATA.built).slice(5,7) + ' ' + String(DATA.built).slice(11))}${n ? ` · локально: ${n}` : ''}`) + actions() +
+  return head(OWN ? 'Мой гараж' : 'Гараж', `${OWN ? 'Обновлено' : 'Таблица от'} ${esc(String(DATA.built).slice(8,10) + '.' + String(DATA.built).slice(5,7) + ' ' + String(DATA.built).slice(11))}${n ? ` · локально: ${n}` : ''}`) + actions() +
   `<div class="grid g2"><div><h2>Ближайшие события</h2><div class="glass">${ev.map(e => { const st = stD(e.d);
     return `<div class="ev"><span class="dot s-${st}"></span><div class="t"><b>${esc(e.t)}</b><span>${e.s}</span></div><span class="badge b-${st}">${dlabel(e.d)}</span></div>`; }).join('')}</div></div>
   <div><h2>До ТО</h2><div class="glass">${to.map(e => { const st = stK(e.k), c = cars().find(x => 'ТО ' + short(x.name) === e.t);
@@ -331,10 +341,10 @@ function vSum() {
 }
 function vCars() {
   if (state.car) return vCar(cars().find(c => c.name === state.car));
-  return head('Машины', `${DATA.cars.length} автомобиля`) + `<div class="grid g3">${cars().map(carCard).join('')}</div>`;
+  return head('Машины', `${DATA.cars.length} ${plural(DATA.cars.length, 'автомобиль', 'автомобиля', 'автомобилей')}`) + (OWN ? addCarBtn() : '') + `<div class="grid g3">${cars().map(carCard).join('')}</div>`;
 }
 /* ---------- фото заказ-нарядов ---------- */
-const LPH = 'garage.photos.v1';
+const LPH = OWN ? 'garage.own.photos.v1' : 'garage.photos.v1';
 let PHQ = (() => { try { return JSON.parse(localStorage.getItem(LPH)) || []; } catch (e) { return []; } })();  // ещё не загруженные + загруженные, но не внесённые ботом
 const phSave = () => lsSet(LPH, JSON.stringify(PHQ));
 const ek = (car, date, km) => `${car}|${String(date || '').slice(0, 10)}|${km == null ? '' : +km}`;
@@ -355,10 +365,11 @@ const slug = t => String(t || 'car').replace(/[^A-Za-zА-Яа-яЁё0-9]+/g, '-'
 async function addPhotos(files, meta) {
   let n = 0;
   for (const f of files) { try { const b = await shrink(f), id = uid(), date = (meta.date || iso()).slice(0, 10);
-      const path = `photos/${slug(meta.car)}/${date}_${id}.jpg`; await pPut(path, b);
+      const path = meta.carimg ? `photos/cars/${id}.jpg` : `photos/${slug(meta.car)}/${date}_${id}.jpg`; await pPut(path, b);
+      if (meta.carimg) { PHQ.push({id, carimg: true, path, up: false, ts: new Date().toISOString()}); meta.onpath && meta.onpath(path); n++; continue; }
       PHQ.push({id, car: meta.car, date: meta.date || null, km: meta.km ?? null, ek: meta.draft ? null : ek(meta.car, meta.date, meta.km), draft: !!meta.draft, path, up: false, ts: new Date().toISOString()}); n++;
     } catch (e) { toast('Фото не добавлено: ' + ((e && e.message) || 'ошибка хранилища')); } }
-  phSave(); render(); if (n) { toast(srvOn() ? `Фото: ${n}, отправляю` : `Фото: ${n} — сохранены на устройстве, подключите синхронизацию`); srvSoon(); } }
+  phSave(); render(); if (n && meta.carimg) { srvSoon(); return; } if (n) { toast(srvOn() ? `Фото: ${n}, отправляю` : `Фото: ${n} — сохранены на устройстве, подключите синхронизацию`); srvSoon(); } }
 function phStrip(s) {
   const key = ek(s.car, s.date, s.km), q = PHQ.filter(p => p.ek === key && !(s.photos || []).includes(p.path));
   const th = [...(s.photos || []).map(p => `<div class="th" data-ph="${esc(p)}"></div>`), ...q.map(p => `<div class="th q" data-ph="${esc(p.path)}"></div>`)].join('');
@@ -367,12 +378,13 @@ const phURL = {};
 async function phBlob(path) { let b = await pGet(path); if (b) return b; if (!srvOn()) return null;
   const r = await fetch(`https://api.github.com/repos/${SRV.repo}/contents/${path.split('/').map(encodeURIComponent).join('/')}`, {headers: {Authorization: 'Bearer ' + SRV.token, Accept: 'application/vnd.github.raw+json'}, cache: 'no-store'});
   if (!r.ok) return null; b = await r.blob(); pPut(path, b).catch(() => {}); return b; }
-async function phLoad() { for (const el of document.querySelectorAll('.th[data-ph]')) { const p = el.dataset.ph;
+async function phLoad() { for (const el of document.querySelectorAll('img[data-ci]')) { const p = el.dataset.ci;
+    try { if (!phURL[p]) { const b = await phBlob(p); if (!b) continue; phURL[p] = URL.createObjectURL(b); } el.src = phURL[p]; } catch (e) {} } for (const el of document.querySelectorAll('.th[data-ph]')) { const p = el.dataset.ph;
     try { if (!phURL[p]) { const b = await phBlob(p); if (!b) { el.textContent = 'нет'; continue; } phURL[p] = URL.createObjectURL(b); }
       el.style.backgroundImage = `url("${phURL[p]}")`; } catch (e) {} } }
 function pickPhotos(meta) { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.multiple = true;
   i.onchange = () => { if (i.files.length) addPhotos([...i.files], meta); }; i.style.display = 'none'; document.body.appendChild(i); i.click(); setTimeout(() => i.remove(), 60000); }
-function woForm(car) { sheet(`<h3>Заказ-наряд по фото</h3><p class="sub" style="margin:0 0 12px">Сфотографируйте или выберите фото заказ-наряда. Бот распознает его и создаст запись в журнале ТО с отметкой «проверить».</p>
+function woForm(car) { sheet(`<h3>Заказ-наряд по фото</h3><p class="sub" style="margin:0 0 12px">Сфотографируйте или выберите фото заказ-наряда. ${OWN ? 'Фото сохранится в журнале ТО как запись с отметкой «проверить» — суммы и работы допишите сами.' : 'Бот распознает его и создаст запись в журнале ТО с отметкой «проверить».'}</p>
   <form id="wof"><label class="f">Машина<select name="car">${carOpts(car)}</select></label><label class="f">Фото<input name="f" type="file" accept="image/*" multiple required></label>
   <div style="display:flex;gap:10px;margin-top:6px"><button type="button" class="btn sec" data-act="close" style="flex:1">Отмена</button><button class="btn" style="flex:2">Отправить</button></div></form>`); }
 document.addEventListener('submit', e => { if (e.target.id !== 'wof') return; e.preventDefault(); e.stopImmediatePropagation();
@@ -381,9 +393,10 @@ async function phSync() {   // вызывается из srvSync
   for (const p of PHQ.filter(x => !x.up)) { const b = await pGet(p.path); if (!b) { p.up = true; continue; }
     const content = await new Promise(res => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.readAsDataURL(b); });
     await gh(p.path, {method: 'PUT', body: JSON.stringify({message: 'photo ' + p.car, content})});
+    if (OWN) { p.up = true; phSave(); continue; }
     await gh(`changes/ph_${fid(p.id)}.json`, {method: 'PUT', body: JSON.stringify({message: 'photo meta', content: b64(JSON.stringify({kind: 'photo', item: {id: p.id, car: p.car, date: p.date, km: p.km, path: p.path, draft: p.draft}}))})});
     p.up = true; phSave(); }
-  const ap = new Set(DATA && DATA.applied || []); PHQ = PHQ.filter(p => !(p.up && ap.has(p.id))); phSave(); }
+  if (OWN) return; const ap = new Set(DATA && DATA.applied || []); PHQ = PHQ.filter(p => !(p.up && ap.has(p.id))); phSave(); }
 function svcRow(s) {
   return `<div class="row"><div class="l"><b>${esc(s.type || 'Запись')}</b>${s.local ? '<span class="tag new">новое</span>' : ''}<small>${s.date ? fd(pd(s.date)) : 'дата не указана'} · ${km(s.km)}${s.shop ? ' · ' + esc(s.shop) : ''}</small>
   ${s.check ? '<span class="tag chk">проверить</span>' : ''}${s.what ? `<small>${esc(s.what)}</small>` : ''}${s.doc ? `<small>${ic('doc', 13)} ${esc(s.doc)}</small>` : ''}${phStrip(s)}</div><div class="r">${s.cost ? rub(s.cost) : ''}</div></div>`;
@@ -393,7 +406,7 @@ function vCar(c) {
   const fields = [['Госномер', c.plate], ['VIN', c.vin], ['Год', r['Год']], ['Мощность', r['Мощность']], ['Цвет', r['Цвет']], ['СТС', r['СТС']], ['ПТС', r['ПТС (ЭПТС)']], ['Интервал ТО', km(c.interval)]];
   return `<div class="back" data-tab="cars">${ic('left', 18)} Машины</div>` + head(esc(c.name), esc(r['Примечания'] || '')) +
   `<div class="grid g2"><div>${carCard(c).replace('class="glass card car"', 'class="glass card"')}
-  <h2>Действия</h2>${actions(c.name)}
+  <h2>Действия</h2>${actions(c.name)}${OWN ? `<div style="display:flex;gap:10px;margin-top:10px"><button class="btn sec" data-act="caredit" data-car="${esc(c.name)}" style="flex:1">Изменить машину</button><button class="btn sec" data-act="cardel" data-car="${esc(c.name)}" style="flex:1;color:var(--red)">Удалить</button></div>` : ''}
   <h2>Данные</h2><div class="glass card"><dl class="kv">${fields.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v ?? '—')}</dd>`).join('')}</dl></div>
   <h2>Страховки</h2><div class="glass">${pol.map(p => { const d = days(p.to); return `<div class="row"><div class="l"><b>${p.type} · ${esc(p.co)}</b><small>${esc(p.num)} · до ${fd(p.to)}</small></div><div class="r"><span class="badge b-${stD(d)}">${dlabel(d)}</span></div></div>`; }).join('') || '<div class="row muted">Нет данных</div>'}</div></div>
   <div><h2>Следующее ТО</h2>${c.plan ? planBlock(c, true) : '<div class="glass card muted">План ТО не найден</div>'}
@@ -446,7 +459,9 @@ function vBud() {
 function render() {
   nav();
   if (!DATA || !DATA.cars) { $('#main').innerHTML = `<div class="view"><header class="top"><div><h1>Гараж</h1><div class="sub">Нет данных на этом устройстве</div></div><div class="hbtns">${syncBadge()}</div></header><div class="glass card"><p style="margin:0 0 14px">Подключите синхронизацию с GitHub: нажмите кнопку и введите ключ доступа. Данные загрузятся автоматически.</p><button class="btn" data-act="srv">Подключить</button></div></div>`; return; }
-  if (!state.toCar) state.toCar = DATA.cars[0]['Машина'];
+  if (OWN && !DATA.cars.length) { $('#main').innerHTML = `<div class="view"><header class="top"><div><h1>Мой гараж</h1><div class="sub">${srvOn() ? 'Репозиторий ' + esc(SRV.repo) : 'Синхронизация не подключена'}</div></div><div class="hbtns">${syncBadge()}</div></header><div class="glass card"><p style="margin:0 0 14px">Машин пока нет. Добавьте первую — данные сохранятся в вашем закрытом репозитории GitHub.</p>${addCarBtn()}</div></div>`; return; }
+  if (!state.toCar || !DATA.cars.some(c => c['Машина'] === state.toCar)) state.toCar = DATA.cars[0]['Машина'];
+  if (state.car && !DATA.cars.some(c => c['Машина'] === state.car)) state.car = null;
   const v = {sum: vSum, cars: vCars, to: vTO, ins: vIns, bud: vBud}[state.tab]();
   $('#main').innerHTML = `<div class="view">${v}</div>`;
   requestAnimationFrame(() => setTimeout(() => {
@@ -481,7 +496,7 @@ function submit(e) {
   if (k === 'service') { const c = model(DATA.cars.find(x => x['Машина'] === fd0.car)); const km0 = num(fd0.km);
     CH.service.push({car: fd0.car, type: fd0.type, km: km0, date: fd0.date, what: fd0.what, shop: fd0.shop, cost: num(fd0.cost), next: fd0.type === 'Плановое ТО' ? km0 + c.interval : null, id, id, ts}); }
   if (k === 'expense') CH.budget.push({car: fd0.car, item: fd0.item, plan: num(fd0.plan), due: fd0.due, fact: num(fd0.fact), status: 'План', note: fd0.note, id, ts});
-  save(); markDirty(); close(); render(); toast(srvOn() ? 'Записано, отправляю боту' : 'Записано. Нажмите «Сохранить в iCloud»');
+  save(); markDirty(); close(); render(); toast(OWN ? (srvOn() ? 'Записано, сохраняю' : 'Записано на устройстве — подключите GitHub') : srvOn() ? 'Записано, отправляю боту' : 'Записано. Нажмите «Сохранить в iCloud»');
 }
 function exportJSON() {
   const n = CH.mileage.length + CH.service.length + CH.budget.length;
@@ -492,7 +507,7 @@ function exportJSON() {
   <div style="display:flex;gap:10px"><button class="btn sec" data-act="close" style="flex:1">Готово</button><button class="btn" data-act="clear" style="flex:1">Очистить локальные</button></div>`);
 }
 /* ---------- синхронизация через iCloud Drive ---------- */
-const LSY = 'garage.sync.v1', FNAME = 'garage-data.json';
+const LSY = OWN ? 'garage.own.sync.v1' : 'garage.sync.v1', FNAME = 'garage-data.json';
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
 const keyOf = x => x.id || x.ts || JSON.stringify(x);
 let SY = (() => { try { return JSON.parse(lsGet(LSY)) || {}; } catch (e) { return {}; } })();
@@ -518,6 +533,7 @@ async function gh(path, opt = {}, raw) {
     if (!r.ok) throw new Error('GitHub ответил ' + r.status); return raw ? JSON.parse(await r.text()) : r.json(); }
   finally { clearTimeout(tm); } }
 async function srvSync(manual) {
+  if (OWN) return ownSync(manual);
   if (!srvOn() || NET.busy) return; if (navigator.onLine === false) { NET.state = 'off'; render(); return; }
   NET.busy = true; NET.state = 'busy'; render();
   try { const s = sentSet();
@@ -539,18 +555,125 @@ async function srvSync(manual) {
     if (manual) toast(sn ? 'Синхронизировано' : 'Подключено, но данных в репозитории пока нет');
   } catch (e) { NET.state = 'err'; NET.err = e.name === 'AbortError' ? 'нет ответа' : (e.message || 'нет связи'); if (manual) toast('Нет связи: ' + NET.err); }
   finally { NET.busy = false; render(); } }
+
+/* ---------- свой гараж: база garage-db.json в репозитории пользователя ---------- */
+const DBF = 'garage-db.json', LOP = 'garage.own.ops.v1';
+let OPS = (() => { try { return JSON.parse(lsGet(LOP)) || []; } catch (e) { return []; } })();
+const opsSave = () => lsSet(LOP, JSON.stringify(OPS));
+const addCarBtn = () => `<div style="margin:0 0 14px"><div class="act glass" data-act="caradd" style="flex-direction:row;justify-content:center"><div class="ic" style="width:32px;height:32px">${ic('plus', 18)}</div>Добавить машину</div></div>`;
+const nowB = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16).replace('T', ' '); };
+const b64u = t => { const u = new TextEncoder().encode(t); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
+function applyOp(db, o) {
+  const rows = ['mileage', 'service', 'budget', 'insurance'];
+  if (o.op === 'car') { const i = db.cars.findIndex(c => c.id === o.car.id), old = i >= 0 ? db.cars[i] : null;
+    if (old && old['Машина'] !== o.car['Машина']) rows.forEach(k => (db[k] || []).forEach(r => { if (r['Машина'] === old['Машина']) r['Машина'] = o.car['Машина']; }));
+    const c = Object.assign({}, old || {}, o.car); 
+    if (o.car['Пробег, км'] != null) c['Пробег, км'] = +o.car['Пробег, км'];
+    if (i >= 0) db.cars[i] = c; else db.cars.push(c);
+    db.insurance = (db.insurance || []).filter(r => r['Машина'] !== c['Машина'] || !['ОСАГО', 'КАСКО'].includes(r['Тип'])).concat((o.ins || []).map(r => Object.assign({'Машина': c['Машина']}, r))); }
+  if (o.op === 'cardel') { const c = db.cars.find(x => x.id === o.id); if (c) { db.cars = db.cars.filter(x => x !== c); rows.forEach(k => db[k] = (db[k] || []).filter(r => r['Машина'] !== c['Машина'])); } }
+  return db; }
+function bumpKm(db, car, k) { const c = db.cars.find(x => x['Машина'] === car); if (c && +k && +k > (+c['Пробег, км'] || 0)) c['Пробег, км'] = +k; }
+function applyAll(db) {
+  db.applied = db.applied || []; const ap = new Set(db.applied), mark = id => { if (!ap.has(id)) { ap.add(id); db.applied.push(id); } };
+  OPS.forEach(o => applyOp(db, o));
+  CH.mileage.forEach(m => { if (ap.has(m.id)) return; db.mileage.push({'Машина': m.car, 'Дата': m.date, 'Пробег, км': m.km, 'Комментарий': m.note || '', id: m.id}); bumpKm(db, m.car, m.km); mark(m.id); });
+  CH.service.forEach(s => { if (ap.has(s.id)) return; db.service.push({'Машина': s.car, 'Дата': s.date, 'Пробег, км': s.km, 'Вид работ': s.type, 'Что сделано / заменено': s.what || '', 'Сервис': s.shop || '', 'Стоимость, ₽': s.cost, 'Следующее ТО (км)': s.next, 'Фото': '', id: s.id}); bumpKm(db, s.car, s.km); mark(s.id); });
+  CH.budget.forEach(b => { if (ap.has(b.id)) return; db.budget.push({'Машина': b.car, 'Статья': b.item, 'План, ₽': b.plan, 'Срок': b.due, 'Факт, ₽': b.fact, 'Статус': b.status, 'Комментарий': b.note || '', id: b.id}); mark(b.id); });
+  PHQ.filter(p => p.up && !p.carimg && !ap.has(p.id)).forEach(p => {
+    const row = !p.draft && db.service.find(s => ek(s['Машина'], s['Дата'], s['Пробег, км']) === p.ek);
+    if (row) row['Фото'] = [row['Фото'], p.path].filter(Boolean).join('; ');
+    else db.service.push({'Машина': p.car, 'Дата': (p.date || iso()).slice(0, 10), 'Пробег, км': p.km, 'Вид работ': 'Заказ-наряд (фото)', 'Документ / заказ-наряд': 'проверить', 'Фото': p.path, id: p.id});
+    mark(p.id); });
+  PHQ.filter(p => p.up && p.carimg).forEach(p => mark(p.id));
+  return db; }
+async function ownSync(manual) {
+  if (!srvOn() || NET.busy) return; if (navigator.onLine === false) { NET.state = 'off'; render(); return; }
+  NET.busy = true; NET.state = 'busy'; render();
+  try {
+    if (!SY.privOk) { const r = await fetch(`https://api.github.com/repos/${SRV.repo}`, {headers: {Authorization: 'Bearer ' + SRV.token}, cache: 'no-store'});
+      if (r.status === 401) throw new Error('ключ недействителен'); if (r.status === 404 || r.status === 403) throw new Error('репозиторий не найден или ключ не даёт к нему доступ');
+      const j = await r.json(); if (!j.private) throw new Error('репозиторий открытый — сделайте его закрытым (Private), иначе данные увидят все');
+      if (j.permissions && !j.permissions.push) throw new Error('у ключа нет права записи (Contents: Read and write)'); SY.privOk = true; saveSY(); }
+    await phSync();
+    for (let i = 0; i < 4; i++) {
+      const meta = await gh(DBF), f = meta ? await gh(DBF, {}, true) : null;
+      if (f && f.app !== 'garage-own') throw new Error('в репозитории чужой файл ' + DBF);
+      const base = f ? f.data : (DATA && DATA.cars ? JSON.parse(JSON.stringify(DATA)) : emptyDB());
+      const ap = new Set(base.applied || []);
+      const dirty = !f || OPS.length || ['mileage', 'service', 'budget'].some(k => CH[k].some(x => !ap.has(x.id))) || PHQ.some(p => p.up && !ap.has(p.id));
+      if (!dirty) { DATA = base; break; }
+      const nd = applyAll(JSON.parse(JSON.stringify(base))); nd.built = nowB();
+      const r = await fetch(`https://api.github.com/repos/${SRV.repo}/contents/${DBF}`, {method: 'PUT', cache: 'no-store', headers: {Authorization: 'Bearer ' + SRV.token, Accept: 'application/vnd.github+json'},
+        body: JSON.stringify(Object.assign({message: 'garage: обновление', content: b64u(JSON.stringify({app: 'garage-own', format: 1, data: nd}, null, 1))}, meta ? {sha: meta.sha} : {}))});
+      if (r.status === 409 || r.status === 422) { if (i === 3) throw new Error('конфликт записи, повторите'); continue; }
+      if (r.status === 401) throw new Error('ключ недействителен'); if (r.status === 403 || r.status === 404) throw new Error('нет права записи в репозиторий');
+      if (!r.ok) throw new Error('GitHub ответил ' + r.status);
+      DATA = nd; OPS = []; opsSave(); break; }
+    lsSet(LSN, JSON.stringify(DATA));
+    const ap = new Set(DATA.applied || []); ['mileage', 'service', 'budget'].forEach(k => CH[k] = CH[k].filter(x => !ap.has(x.id))); save();
+    PHQ = PHQ.filter(p => !(p.up && ap.has(p.id))); phSave();
+    NET.state = 'ok'; NET.err = ''; SY.dirty = false; SY.last = new Date().toISOString(); saveSY();
+    if (manual) toast('Сохранено в ' + SRV.repo);
+  } catch (e) { NET.state = 'err'; NET.err = e.name === 'AbortError' ? 'нет ответа' : (e.message || 'нет связи'); if (manual) toast('Ошибка: ' + NET.err); }
+  finally { NET.busy = false; render(); } }
+function pushOp(o) { OPS.push(o); opsSave(); applyOp(DATA, o); lsSet(LSN, JSON.stringify(DATA)); render(); srvSoon(); }
+let CARPH = null;
+function pickCarPhoto() { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.style.display = 'none';
+  i.onchange = () => { if (!i.files.length) return; CARPH = i.files[0]; const l = $('#carphl'); if (l) l.textContent = 'Выбрано: ' + CARPH.name; }; document.body.appendChild(i); i.click(); setTimeout(() => i.remove(), 60000); }
+function carForm(name) {
+  const c = name ? DATA.cars.find(x => x['Машина'] === name) : {}, ins = t => (DATA.insurance || []).find(r => r['Машина'] === name && r['Тип'] === t) || {};
+  const o = ins('ОСАГО'), k = ins('КАСКО'), v = x => esc(x ?? ''), dt = x => { const d = pd(x); return d ? new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10) : ''; };
+  CARPH = null;
+  sheet(`<h3>${name ? 'Изменить машину' : 'Новая машина'}</h3><form id="carf" data-id="${v(c.id)}">
+  <label class="f">Марка<input name="make" required value="${v(c['Марка'])}" placeholder="Toyota"></label><label class="f">Модель<input name="model" value="${v(c['Модель'])}" placeholder="Land Cruiser"></label>
+  <label class="f">Госномер<input name="plate" value="${v(c['Госномер'])}"></label><label class="f">VIN<input name="vin" autocapitalize="characters" value="${v(c['VIN'])}"></label>
+  <label class="f">Год<input name="year" type="number" inputmode="numeric" value="${v(c['Год'])}"></label><label class="f">Текущий пробег, км<input name="km" type="number" inputmode="numeric" value="${v(c['Пробег, км'])}"></label>
+  <label class="f">Интервал ТО, км<input name="ikm" type="number" inputmode="numeric" value="${v(c['Интервал ТО, км'] || 10000)}"></label><label class="f">Интервал ТО, месяцев<input name="imon" type="number" inputmode="numeric" value="${v(c['Интервал ТО, мес'] || 12)}"></label>
+  <label class="f">Последнее ТО: дата<input name="tod" type="date" value="${dt(c['Посл. ТО: дата'])}"></label><label class="f">Последнее ТО: пробег, км<input name="tokm" type="number" inputmode="numeric" value="${v(c['Посл. ТО: км'])}"></label>
+  <label class="f">ОСАГО: страховая<input name="oco" value="${v(o['Страховая'])}"></label><label class="f">ОСАГО: начало<input name="ofrom" type="date" value="${dt(o['Начало'])}"></label><label class="f">ОСАГО: окончание<input name="oto" type="date" value="${dt(o['Окончание'])}"></label>
+  <label class="f">КАСКО: страховая<input name="kco" value="${v(k['Страховая'])}"></label><label class="f">КАСКО: начало<input name="kfrom" type="date" value="${dt(k['Начало'])}"></label><label class="f">КАСКО: окончание<input name="kto" type="date" value="${dt(k['Окончание'])}"></label>
+  <div style="margin:4px 0 12px"><button type="button" class="btn sec" data-act="carphoto" style="width:100%">${ic('cam', 18)} Фото для карточки</button><div class="sub" id="carphl" style="margin-top:6px">${c['Фото машины'] ? 'Своё фото загружено' : 'Без фото будет стандартная картинка'}</div></div>
+  <div style="display:flex;gap:10px;margin-top:6px"><button type="button" class="btn sec" data-act="close" style="flex:1">Отмена</button><button class="btn" style="flex:2">Сохранить</button></div></form>`); }
+document.addEventListener('submit', e => { if (e.target.id !== 'carf') return; e.preventDefault(); e.stopImmediatePropagation();
+  const f = Object.fromEntries(new FormData(e.target)), id = e.target.dataset.id || uid(), n = x => x === '' || x == null ? null : +x;
+  let nm = `${f.make} ${f.model}`.trim(); if (DATA.cars.some(c => c['Машина'] === nm && c.id !== id)) nm += f.plate ? ' ' + f.plate : ' (2)';
+  const car = {id, 'Машина': nm, 'Марка': f.make.trim(), 'Модель': f.model.trim(), 'Госномер': f.plate.trim(), 'VIN': f.vin.trim().toUpperCase(), 'Год': n(f.year), 'Пробег, км': n(f.km) || 0,
+    'Интервал ТО, км': n(f.ikm) || 10000, 'Интервал ТО, мес': n(f.imon) || 12, 'Посл. ТО: дата': f.tod || '', 'Посл. ТО: км': n(f.tokm) || 0};
+  car['След. ТО, км'] = (car['Посл. ТО: км'] || 0) + car['Интервал ТО, км'];
+  const ins = []; if (f.oto || f.oco) ins.push({'Тип': 'ОСАГО', 'Страховая': f.oco, 'Начало': f.ofrom, 'Окончание': f.oto}); if (f.kto || f.kco) ins.push({'Тип': 'КАСКО', 'Страховая': f.kco, 'Начало': f.kfrom, 'Окончание': f.kto});
+  const ph = CARPH; CARPH = null; close();
+  const done = () => { pushOp({op: 'car', car, ins}); if (state.car) state.car = nm; toast(srvOn() ? 'Машина сохранена' : 'Сохранено на устройстве — подключите GitHub'); };
+  if (ph) addPhotos([ph], {carimg: true, onpath: p => { car['Фото машины'] = p; }}).then(done); else done(); }, true);
+function carDel(name) { const c = DATA.cars.find(x => x['Машина'] === name); if (!c) return;
+  if (!confirm(`Удалить ${name} вместе с журналами пробега, ТО, расходами и страховками?`)) return;
+  ['mileage', 'service', 'budget'].forEach(k => CH[k] = CH[k].filter(x => x.car !== name)); save();
+  state.car = null; pushOp({op: 'cardel', id: c.id}); go('cars'); toast('Машина удалена'); }
+async function mkRepo() {
+  const tok = String(($('#srvf input[name=token]') || {}).value || SRV.token || '').replace(/[\s\u200b-\u200d\ufeff]/g, '');
+  if (!tok) return toast('Сначала вставьте ключ GitHub');
+  const name = prompt('Название нового закрытого репозитория', 'my-garage'); if (!name) return;
+  try { const h = {Authorization: 'Bearer ' + tok, Accept: 'application/vnd.github+json'};
+    const r = await fetch('https://api.github.com/user/repos', {method: 'POST', headers: h, body: JSON.stringify({name: name.trim(), private: true, auto_init: true, description: 'Мой гараж (данные приложения)'})});
+    if (r.status === 201) { const j = await r.json(); $('#srvf input[name=repo]').value = j.full_name; $('#srvf input[name=token]').value = tok; toast('Репозиторий создан'); $('#srvf').requestSubmit ? $('#srvf').requestSubmit() : $('#srvf button.btn:not(.sec)').click(); return; }
+    if (r.status === 422) return toast('Репозиторий с таким названием уже есть — впишите его в поле «Репозиторий»');
+    sheet(`<h3>Не удалось создать репозиторий</h3><p>У ключа нет права создавать репозитории (GitHub ответил ${r.status}). Это нормально для ключа «только к одному репозиторию».</p><ol class="steps"><li>Откройте <a href="https://github.com/new" target="_blank" rel="noopener">github.com/new</a>, придумайте название (например my-garage), выберите <b>Private</b> и нажмите «Create repository».</li><li>Создайте ключ с доступом к этому репозиторию: Contents — Read and write.</li><li>Вернитесь сюда и впишите <i>логин/название</i> и ключ.</li></ol><button class="btn" data-act="srv" style="width:100%">Понятно</button>`);
+  } catch (e) { toast('Нет связи с GitHub'); } }
 function srvSoon() { clearTimeout(srvSoon.t); srvSoon.t = setTimeout(() => srvSync(), 300); }
 function srvSettings() {
   sheet(`<h3>Синхронизация через GitHub</h3><p class="sub" style="margin:0 0 12px">Записи автоматически уходят в ваш приватный репозиторий, бот вносит их в базу; свежие данные подтягиваются: при открытии, при возврате в приложение и раз в минуту. Без связи записи копятся на устройстве и уйдут позже.</p>
+  <div class="glass card" style="margin:0 0 12px;font-size:14px"><b>Свой гараж</b> (для друзей): укажите свой закрытый репозиторий <i>логин/название</i> и свой ключ — машины будут храниться только у вас. Без репозитория: введите ключ и нажмите «Создать мой гараж».<br><span class="muted">Сейчас: ${OWN ? 'свой гараж' : 'гараж владельца (с ботом)'}</span></div>
   <form id="srvf"><label class="f">Репозиторий с данными<input name="repo" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="makc178/garage-data" value="${esc(SRV.repo)}"></label>
   <label class="f">Ключ GitHub (github_pat_…)<input name="token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(SRV.token)}"></label>
   <div class="sub" style="margin:0 0 12px">Ключ хранится на этом устройстве и не стирается при ошибках связи. На iPhone Safari и значок на экране «Домой» хранят данные раздельно — ключ вводится в каждом один раз. В режиме «Частный доступ» ключ не сохраняется.</div>
   <div class="sub" style="margin:0 0 12px">Статус: ${esc(netText())}${NET.err ? ' — ' + esc(NET.err) : ''} · не отправлено: ${unsentN()} · ждут бота: ${qn() - unsentN()}</div>
-  <div style="display:flex;gap:10px"><button type="button" class="btn sec" data-act="close" style="flex:1">Закрыть</button><button class="btn" style="flex:2">Сохранить и проверить</button></div>${SRV.token ? `<button type="button" class="btn sec" data-act="disc" style="width:100%;margin-top:10px">Отключить (удалить ключ с устройства)</button>` : ''}</form>`); }
+  <div style="display:flex;gap:10px"><button type="button" class="btn sec" data-act="close" style="flex:1">Закрыть</button><button class="btn" style="flex:2">Сохранить и проверить</button></div><button type="button" class="btn sec" data-act="mkrepo" style="width:100%;margin-top:10px">Создать мой гараж (новый закрытый репозиторий)</button>${SRV.token ? `<button type="button" class="btn sec" data-act="disc" style="width:100%;margin-top:10px">Отключить (удалить ключ с устройства)</button>` : ''}</form>`); }
 function netText() { return !srvOn() ? 'не настроен' : ({busy: 'синхронизация…', ok: 'синхр. ' + fdt(SY.last), err: 'ошибка', off: 'нет сети', idle: 'ожидание'})[NET.state]; }
 document.addEventListener('submit', e => { if (e.target.id !== 'srvf') return; e.preventDefault(); e.stopImmediatePropagation();
   const f = new FormData(e.target); SRV = {repo: String(f.get('repo') || '').trim().replace(/^https:\/\/github\.com\//, '').replace(/\/+$/, ''), token: String(f.get('token') || '').replace(/[\s\u200b-\u200d\ufeff]/g, '')};
-  lsSet(LSV, JSON.stringify(SRV)); VAULT.set('garage:gh', SRV); if (SRV.token) VAULT.set('shared:token', SRV.token); VAULT.persist(); close(); srvSync(true); }, true);
+  const own = !!SRV.repo && SRV.repo.toLowerCase() !== OWNER_REPO;
+  lsSet(LSV, JSON.stringify(SRV)); VAULT.set('garage:gh', SRV); if (SRV.token && !own) VAULT.set('shared:token', SRV.token); VAULT.persist(); close();
+  if (own !== OWN) { setTimeout(() => location.reload(), 300); return; } if (OWN) { SY.privOk = false; saveSY(); } srvSync(true); }, true);
 addEventListener('online', () => srvSync()); addEventListener('focus', () => srvSync());
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') srvSync(); });
 addEventListener('pageshow', e => { if (e.persisted) srvSync(); });
@@ -641,6 +764,11 @@ document.addEventListener('click', e => {
   else if (a === 'addphoto') pickPhotos({car: t.dataset.car, date: t.dataset.date || null, km: t.dataset.km === '' ? null : +t.dataset.km});
   else if (a === 'wo') woForm(t.dataset.car);
   else if (a === 'theme') theme(true);
+  else if (a === 'caradd') carForm(null);
+  else if (a === 'caredit') carForm(t.dataset.car);
+  else if (a === 'cardel') carDel(t.dataset.car);
+  else if (a === 'carphoto') pickCarPhoto();
+  else if (a === 'mkrepo') mkRepo();
   else if (a === 'clear') { if (confirm('Удалить локальные изменения с этого устройства?')) { CH = {mileage: [], service: [], budget: []}; save(); markDirty(); close(); render(); } }
 });
 $('#ov').onclick = close;
@@ -648,7 +776,8 @@ document.addEventListener('submit', submit);
 $('#imp').onchange = e => { const f = e.target.files[0]; if (f) importJSON(f); e.target.value = ''; };
 theme(); render();
 (async () => {   // ключ: localStorage -> IndexedDB -> общий ключ другого приложения (если у него есть доступ к репозиторию)
-  if (!srvOn()) { const o = await VAULT.get('garage:gh'); if (o && o.token) { SRV = o; lsSet(LSV, JSON.stringify(SRV)); } }
+  if (!srvOn()) { const o = await VAULT.get('garage:gh'); if (o && o.token) { SRV = o; lsSet(LSV, JSON.stringify(SRV)); if ((SRV.repo.toLowerCase() !== OWNER_REPO) !== OWN) return location.reload(); } }
+  if (OWN) { render(); srvSync(); return; }
   if (!srvOn()) { const t = await VAULT.get('shared:token'); if (t) { try { const r = await fetch(`https://api.github.com/repos/${SRV.repo}`, {headers: {Authorization: 'Bearer ' + t}});
         if (r.ok) { SRV = {repo: SRV.repo, token: t}; lsSet(LSV, JSON.stringify(SRV)); VAULT.set('garage:gh', SRV); } } catch (e) {} } }
   else VAULT.set('garage:gh', SRV);
