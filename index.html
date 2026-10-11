@@ -187,6 +187,10 @@ const VAULT = (() => { const DB = 'makc178-vault', ST = 'kv';
 let DATA = /*__DATA__*/null;
 /* режим «свой гараж»: репозиторий не makc178/garage-data -> база JSON только в репозитории пользователя, без бота */
 const OWNER_REPO = 'makc178/garage-data';
+const API = (() => { try { const a = localStorage.getItem('garage.api'); return a && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(a) ? a : 'https://api.github.com'; } catch (e) { return 'https://api.github.com'; } })();  // localhost — только для тестов
+const normRepo = x => { let t = String(x || '').trim().replace(/\s+/g, '').replace(/^(https?:\/\/)?(www\.)?github\.com[\/:]/i, '').replace(/^git@github\.com:/i, '').replace(/[?#].*$/, '').replace(/\/+$/, '').replace(/\.git$/i, '');
+  const m = /^([A-Za-z0-9-]+)\/([A-Za-z0-9._-]+)/.exec(t); return m ? m[1] + '/' + m[2] : t; };
+const tokOk = t => /^(github_pat_[A-Za-z0-9_]{20,}|gh[pousr]_[A-Za-z0-9]{20,})$/.test(t);
 const OWN = (() => { try { const o = JSON.parse(localStorage.getItem('garage.gh.v1')); return !!(o && o.repo && o.repo.toLowerCase() !== OWNER_REPO); } catch (e) { return false; } })();
 const emptyDB = () => ({cars: [], mileage: [], service: [], budget: [], insurance: [], plans: {}, rates: [], applied: [], built: ''});
 const LSN = OWN ? 'garage.own.snapshot.v1' : 'garage.snapshot.v1';
@@ -378,7 +382,7 @@ function phStrip(s) {
   return `<div class="phs">${th}<div class="th add" data-act="addphoto" data-car="${esc(s.car)}" data-date="${esc(s.date || '')}" data-km="${s.km ?? ''}" title="Добавить фото заказ-наряда">${ic('cam', 20)}</div></div>`; }
 const phURL = {};
 async function phBlob(path) { let b = await pGet(path); if (b) return b; if (!srvOn()) return null;
-  const r = await fetch(`https://api.github.com/repos/${SRV.repo}/contents/${path.split('/').map(encodeURIComponent).join('/')}`, {headers: {Authorization: 'Bearer ' + SRV.token, Accept: 'application/vnd.github.raw+json'}, cache: 'no-store'});
+  const r = await fetch(`${API}/repos/${SRV.repo}/contents/${path.split('/').map(encodeURIComponent).join('/')}`, {headers: {Authorization: 'Bearer ' + SRV.token, Accept: 'application/vnd.github.raw+json'}, cache: 'no-store'});
   if (!r.ok) return null; b = await r.blob(); pPut(path, b).catch(() => {}); return b; }
 async function phLoad() { for (const el of document.querySelectorAll('img[data-ci]')) { const p = el.dataset.ci;
     try { if (!phURL[p]) { const b = await phBlob(p); if (!b) continue; phURL[p] = URL.createObjectURL(b); } el.src = phURL[p]; } catch (e) {} } for (const el of document.querySelectorAll('.th[data-ph]')) { const p = el.dataset.ph;
@@ -460,12 +464,13 @@ function vBud() {
 }
 function render() {
   nav();
-  if (!DATA || !DATA.cars) { $('#main').innerHTML = `<div class="view"><header class="top"><div><h1>Гараж</h1><div class="sub">Нет данных на этом устройстве</div></div><div class="hbtns">${syncBadge()}</div></header><div class="glass card"><p style="margin:0 0 14px">Подключите синхронизацию с GitHub: нажмите кнопку и введите ключ доступа. Данные загрузятся автоматически.</p><button class="btn" data-act="srv">Подключить</button></div></div>`; return; }
-  if (OWN && !DATA.cars.length) { $('#main').innerHTML = `<div class="view"><header class="top"><div><h1>Мой гараж</h1><div class="sub">${srvOn() ? 'Репозиторий ' + esc(SRV.repo) : 'Синхронизация не подключена'}</div></div><div class="hbtns">${syncBadge()}</div></header><div class="glass card"><p style="margin:0 0 14px">Машин пока нет. Добавьте первую — данные сохранятся в вашем закрытом репозитории GitHub.</p>${addCarBtn()}</div></div>`; return; }
+  if (!DATA || !DATA.cars) { $('#main').innerHTML = `<div class="view"><header class="top"><div><h1>Гараж</h1><div class="sub">Нет данных на этом устройстве</div></div><div class="hbtns">${syncBadge()}</div></header><div class="glass card"><p style="margin:0 0 14px">Подключите синхронизацию с GitHub: нажмите кнопку и введите ключ доступа. Данные загрузятся автоматически.</p>${NET.err ? `<p class="s-red" style="margin:0 0 14px;font-weight:600">Ошибка: ${esc(NET.err)}</p>` : ''}<p class="muted" style="margin:0 0 14px">Заводите свой гараж? В окне подключения впишите свой репозиторий (логин/название) и свой ключ.</p><div style="display:flex;gap:10px"><button class="btn" data-act="srv" style="flex:2">Подключить</button><button class="btn sec" data-act="diag" style="flex:1">Диагностика</button></div></div></div>`; return; }
+  if (OWN && !DATA.cars.length) { $('#main').innerHTML = `<div class="view"><header class="top"><div><h1>Мой гараж</h1><div class="sub">${srvOn() ? 'Репозиторий ' + esc(SRV.repo) : 'Синхронизация не подключена'}</div></div><div class="hbtns">${syncBadge()}</div></header><div class="glass card"><p style="margin:0 0 14px">Машин пока нет. Добавьте первую — данные сохранятся в вашем закрытом репозитории GitHub.</p>${NET.state === 'err' ? `<p class="s-red" style="margin:0 0 14px;font-weight:600">Ошибка синхронизации: ${esc(NET.err)} <a data-act="diag" style="text-decoration:underline;cursor:pointer">Диагностика</a></p>` : ''}${addCarBtn()}</div></div>`; return; }
   if (!state.toCar || !DATA.cars.some(c => c['Машина'] === state.toCar)) state.toCar = DATA.cars[0]['Машина'];
   if (state.car && !DATA.cars.some(c => c['Машина'] === state.car)) state.car = null;
   const v = {sum: vSum, cars: vCars, to: vTO, ins: vIns, bud: vBud}[state.tab]();
-  $('#main').innerHTML = `<div class="view">${v}</div>`;
+  const errb = OWN && NET.state === 'err' ? `<div class="glass card s-red" style="margin:0 0 12px;font-weight:600">Не сохраняется в GitHub: ${esc(NET.err)}. Записи хранятся на телефоне. <a data-act="diag" style="text-decoration:underline;cursor:pointer">Диагностика</a></div>` : '';
+  $('#main').innerHTML = `<div class="view">${errb}${v}</div>`;
   requestAnimationFrame(() => setTimeout(() => {
     document.querySelectorAll('.ring .fg').forEach(e => e.style.strokeDashoffset = e.dataset.off);
     document.querySelectorAll('.bar i').forEach(e => e.style.width = e.dataset.w + '%');
@@ -528,10 +533,10 @@ const fid = i => String(i).replace(/[^A-Za-z0-9_-]/g, '_');
 // GitHub Contents API (приватный репозиторий с данными, токен только на этом устройстве)
 async function gh(path, opt = {}, raw) {
   const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 30000);
-  try { const r = await fetch(`https://api.github.com/repos/${SRV.repo}/contents/${path}` + (opt.method ? '' : (path.includes('?') ? '&' : '?') + '_=' + Date.now()),
+  try { const r = await fetch(`${API}/repos/${SRV.repo}/contents/${path}` + (opt.method ? '' : (path.includes('?') ? '&' : '?') + '_=' + Date.now()),
       Object.assign({cache: 'no-store', signal: ctl.signal}, opt, {headers: {Authorization: 'Bearer ' + SRV.token, Accept: raw ? 'application/vnd.github.raw+json' : 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'}}));
     if (r.status === 401) throw new Error('ключ недействителен'); if (r.status === 403) throw new Error('нет прав или лимит запросов');
-    if (r.status === 404) return null; if (r.status === 422 && opt.method === 'PUT') return {exists: true};
+    if (r.status === 404 || (r.status === 409 && !opt.method)) return null; if (r.status === 422 && opt.method === 'PUT') return {exists: true};
     if (!r.ok) throw new Error('GitHub ответил ' + r.status); return raw ? JSON.parse(await r.text()) : r.json(); }
   finally { clearTimeout(tm); } }
 async function srvSync(manual) {
@@ -545,6 +550,8 @@ async function srvSync(manual) {
       s.add(id); SY.sent = [...s]; saveSY(); }
     await phSync();
     const sn = await gh('garage-data.json', {}, true);
+    if (!sn && !DATA) { const rr = await fetch(`${API}/repos/${SRV.repo}`, {headers: {Authorization: 'Bearer ' + SRV.token}, cache: 'no-store'});
+      if (!rr.ok) throw new Error(`ключ не даёт доступа к ${SRV.repo}. Если вы заводите свой гараж — впишите в поле «Репозиторий» свой логин/название`); }
     if (sn && sn.app === 'garage' && sn.data && sn.data.cars && (!DATA || String(sn.data.built || '') >= String(DATA.built || ''))) { DATA = sn.data; lsSet(LSN, JSON.stringify(DATA)); }
     const list = await gh('changes') || [];   // записи с других устройств, ещё не внесённые ботом
     const have = new Set(['mileage', 'service', 'budget'].flatMap(k => CH[k].map(x => fid(keyOf(x)))));
@@ -593,7 +600,7 @@ async function ownSync(manual) {
   if (!srvOn() || NET.busy) return; if (navigator.onLine === false) { NET.state = 'off'; render(); return; }
   NET.busy = true; NET.state = 'busy'; render();
   try {
-    if (!SY.privOk) { const r = await fetch(`https://api.github.com/repos/${SRV.repo}`, {headers: {Authorization: 'Bearer ' + SRV.token}, cache: 'no-store'});
+    if (!SY.privOk) { const r = await fetch(`${API}/repos/${SRV.repo}`, {headers: {Authorization: 'Bearer ' + SRV.token}, cache: 'no-store'});
       if (r.status === 401) throw new Error('ключ недействителен'); if (r.status === 404 || r.status === 403) throw new Error('репозиторий не найден или ключ не даёт к нему доступ');
       const j = await r.json(); if (!j.private) throw new Error('репозиторий открытый — сделайте его закрытым (Private), иначе данные увидят все');
       if (j.permissions && !j.permissions.push) throw new Error('у ключа нет права записи (Contents: Read and write)'); SY.privOk = true; saveSY(); }
@@ -606,7 +613,7 @@ async function ownSync(manual) {
       const dirty = !f || OPS.length || ['mileage', 'service', 'budget'].some(k => CH[k].some(x => !ap.has(x.id))) || PHQ.some(p => p.up && !ap.has(p.id));
       if (!dirty) { DATA = base; break; }
       const nd = applyAll(JSON.parse(JSON.stringify(base))); nd.built = nowB();
-      const r = await fetch(`https://api.github.com/repos/${SRV.repo}/contents/${DBF}`, {method: 'PUT', cache: 'no-store', headers: {Authorization: 'Bearer ' + SRV.token, Accept: 'application/vnd.github+json'},
+      const r = await fetch(`${API}/repos/${SRV.repo}/contents/${DBF}`, {method: 'PUT', cache: 'no-store', headers: {Authorization: 'Bearer ' + SRV.token, Accept: 'application/vnd.github+json'},
         body: JSON.stringify(Object.assign({message: 'garage: обновление', content: b64u(JSON.stringify({app: 'garage-own', format: 1, data: nd}, null, 1))}, meta ? {sha: meta.sha} : {}))});
       if (r.status === 409 || r.status === 422) { if (i === 3) throw new Error('конфликт записи, повторите'); continue; }
       if (r.status === 401) throw new Error('ключ недействителен'); if (r.status === 403 || r.status === 404) throw new Error('нет права записи в репозиторий');
@@ -679,7 +686,39 @@ document.addEventListener('submit', async e => { if (e.target.id !== 'stsf') ret
     window.STS_LAST = {text: txt, out}; STSPH = files; pr(1);
     const x = out.r; carForm(null, {'Марка': x.make, 'Модель': x.model, 'Госномер': x.plate, 'VIN': x.vin, 'Год': x.year, 'Цвет': x.color, 'Мощность': x.power, 'СТС': x.sts}, out.unsure);
   } catch (err) { st('Ошибка: ' + (err.message || err)); btn.disabled = false; } }, true);
-function pushOp(o) { OPS.push(o); opsSave(); applyOp(DATA, o); lsSet(LSN, JSON.stringify(DATA)); render(); srvSoon(); }
+
+async function diag() {
+  const tokIn = $('#srvf input[name=token]'), repoIn = $('#srvf input[name=repo]');
+  const repo = normRepo(repoIn ? repoIn.value : SRV.repo), tok = String(tokIn ? tokIn.value : SRV.token || '').replace(/[\s\u200b-\u200d\ufeff]/g, '');
+  const L = []; const row = (ok, t, d) => L.push(`<div class="row"><div class="l"><b>${ok === true ? '✅' : ok === false ? '❌' : '⚠️'} ${esc(t)}</b>${d ? `<small>${esc(d)}</small>` : ''}</div></div>`);
+  const show = () => sheet(`<h3>Диагностика</h3><div class="sub" style="margin:0 0 10px">${esc(new Date().toLocaleString('ru-RU'))} · приложение: ${OWN ? 'свой гараж' : 'гараж владельца'} · ${esc(navigator.userAgent.match(/(iPhone|iPad|Mac|Android|Windows)/)?.[0] || '')}</div><div class="glass">${L.join('')}</div><div style="display:flex;gap:10px;margin-top:12px"><button class="btn sec" data-act="srv" style="flex:1">Настройки</button><button class="btn" data-act="close" style="flex:1">Закрыть</button></div>`);
+  L.push('<div class="row muted">Проверяю…</div>'); show(); L.length = 0;
+  const H = {Authorization: 'Bearer ' + tok, Accept: 'application/vnd.github+json'}, F = async (u, o) => { try { return await fetch(API + u, Object.assign({headers: H, cache: 'no-store'}, o || {})); } catch (e) { return {ok: false, status: 0, json: async () => ({})}; } };
+  const msg = async r => { try { return (await r.json()).message || ''; } catch (e) { return ''; } };
+  row(navigator.onLine !== false, 'Интернет', navigator.onLine === false ? 'нет сети' : '');
+  const own = repo.toLowerCase() !== OWNER_REPO;
+  row(/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/.test(repo), 'Репозиторий: ' + (repo || '(пусто)'), own ? 'режим «свой гараж»' : 'это гараж владельца (makc178). Другу нужно вписать свой репозиторий');
+  if (!tok) { row(false, 'Ключ не введён'); return show(); }
+  row(tokOk(tok), 'Формат ключа', tokOk(tok) ? tok.slice(0, 11) + '…' + tok.slice(-4) + ` (${tok.length} симв.)` : 'должен начинаться с github_pat_; скопируйте целиком');
+  let r = await F('/user');
+  if (r.status === 0) { row(false, 'Связь с GitHub', 'api.github.com недоступен: VPN, блокировщик или сеть'); return show(); }
+  if (r.status === 401) { row(false, 'Ключ действителен', 'GitHub не принимает ключ (401): удалён, истёк или скопирован не полностью'); return show(); }
+  const u = r.ok ? await r.json() : {}; row(true, 'Ключ действителен', u.login ? 'аккаунт: ' + u.login : 'аккаунт определить нельзя (это нормально для ключа на один репозиторий)');
+  r = await F('/repos/' + repo);
+  if (!r.ok) { const m = await msg(r); row(false, 'Репозиторий найден', `GitHub ответил ${r.status}${m ? ': ' + m : ''}. Проверьте название и что в ключе выбран этот репозиторий (Only select repositories)`); return show(); }
+  const j = await r.json(); row(true, 'Репозиторий найден', j.full_name + (j.size === 0 ? ' · пустой (это нормально)' : ''));
+  row(!!j.private, 'Закрытый (Private)', j.private ? '' : 'открытый! Сделайте Private в Settings репозитория, иначе приложение не будет сохранять');
+  const c = await F(`/repos/${repo}/contents/${own ? DBF : 'garage-data.json'}`), cm = c.ok ? '' : await msg(c);
+  row(c.ok ? true : c.status === 404 || c.status === 409 ? null : false, 'Файл базы ' + (own ? DBF : 'garage-data.json'), c.ok ? 'есть' : /empty/i.test(cm) ? 'репозиторий пустой — файл создастся при первом сохранении' : c.status === 404 ? 'ещё нет — создастся при первом сохранении' : `ошибка ${c.status} ${cm}`);
+  if (own) { const path = '.garage-check', pr = await F(`/repos/${repo}/contents/${path}`, {method: 'PUT', body: JSON.stringify({message: 'проверка доступа', content: btoa('ok ' + Date.now())})});
+    if (pr.ok) { const pj = await pr.json(); row(true, 'Право записи (Contents: Read and write)', 'тестовый файл записан и удалён');
+      await F(`/repos/${repo}/contents/${path}`, {method: 'DELETE', body: JSON.stringify({message: 'проверка доступа', sha: pj.content && pj.content.sha})}); }
+    else { const m = await msg(pr); row(false, 'Право записи (Contents: Read and write)', `GitHub ответил ${pr.status}${m ? ': ' + m : ''}. В настройках ключа поставьте Contents — Read and write`); } }
+  else row(j.permissions ? !!j.permissions.push : null, 'Право записи', j.permissions && j.permissions.push ? '' : 'нет');
+  const un = ['mileage', 'service', 'budget'].reduce((a, k) => a + CH[k].length, 0) + (OWN ? OPS.length : 0);
+  row(NET.state !== 'err', 'Последняя синхронизация', `${netText()}${NET.err ? ' — ' + NET.err : ''} · не сохранено в GitHub: ${un}`);
+  show(); }
+function pushOp(o) { OPS.push(o); opsSave(); applyOp(DATA, o); lsSet(LSN, JSON.stringify(DATA)); render(); if (srvOn()) setTimeout(() => srvSync(true), 300); else toast('Сохранено только на этом телефоне — подключите GitHub'); }
 let CARPH = null;
 function pickCarPhoto() { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.style.display = 'none';
   i.onchange = () => { if (!i.files.length) return; CARPH = i.files[0]; const l = $('#carphl'); if (l) l.textContent = 'Выбрано: ' + CARPH.name; }; document.body.appendChild(i); i.click(); setTimeout(() => i.remove(), 60000); }
@@ -701,7 +740,8 @@ function carForm(name, pre, unsure) {
   <div style="margin:4px 0 12px"><button type="button" class="btn sec" data-act="carphoto" style="width:100%">${ic('cam', 18)} Фото для карточки</button><div class="sub" id="carphl" style="margin-top:6px">${c['Фото машины'] ? 'Своё фото загружено' : 'Без фото будет стандартная картинка'}</div></div>
   <div style="display:flex;gap:10px;margin-top:6px"><button type="button" class="btn sec" data-act="close" style="flex:1">Отмена</button><button class="btn" style="flex:2">Сохранить</button></div></form>`); }
 document.addEventListener('submit', e => { if (e.target.id !== 'carf') return; e.preventDefault(); e.stopImmediatePropagation();
-  const f = Object.fromEntries(new FormData(e.target)), id = e.target.dataset.id || uid(), n = x => x === '' || x == null ? null : +x;
+  const f = Object.fromEntries(new FormData(e.target)), id = e.target.dataset.id || uid(), n = x => { const t = String(x ?? '').replace(/[\s\u00a0]/g, '').replace(',', '.'); return t === '' || isNaN(+t) ? null : +t; };
+  if (!String(f.make || '').trim()) return toast('Укажите марку');
   let nm = `${f.make} ${f.model}`.trim(); if (DATA.cars.some(c => c['Машина'] === nm && c.id !== id)) nm += f.plate ? ' ' + f.plate : ' (2)';
   const car = {id, 'Машина': nm, 'Марка': f.make.trim(), 'Модель': f.model.trim(), 'Госномер': f.plate.trim(), 'VIN': f.vin.trim().toUpperCase(), 'Год': n(f.year), 'Цвет': (f.color || '').trim(), 'Мощность': (f.power || '').trim(), 'СТС': (f.sts || '').trim(), 'Пробег, км': n(f.km) || 0,
     'Интервал ТО, км': n(f.ikm) || 10000, 'Интервал ТО, мес': n(f.imon) || 12, 'Посл. ТО: дата': f.tod || '', 'Посл. ТО: км': n(f.tokm) || 0};
@@ -721,7 +761,7 @@ async function mkRepo() {
   if (!tok) return toast('Сначала вставьте ключ GitHub');
   const name = prompt('Название нового закрытого репозитория', 'my-garage'); if (!name) return;
   try { const h = {Authorization: 'Bearer ' + tok, Accept: 'application/vnd.github+json'};
-    const r = await fetch('https://api.github.com/user/repos', {method: 'POST', headers: h, body: JSON.stringify({name: name.trim(), private: true, auto_init: true, description: 'Мой гараж (данные приложения)'})});
+    const r = await fetch(API + '/user/repos', {method: 'POST', headers: h, body: JSON.stringify({name: name.trim(), private: true, auto_init: true, description: 'Мой гараж (данные приложения)'})});
     if (r.status === 201) { const j = await r.json(); $('#srvf input[name=repo]').value = j.full_name; $('#srvf input[name=token]').value = tok; toast('Репозиторий создан'); $('#srvf').requestSubmit ? $('#srvf').requestSubmit() : $('#srvf button.btn:not(.sec)').click(); return; }
     if (r.status === 422) return toast('Репозиторий с таким названием уже есть — впишите его в поле «Репозиторий»');
     sheet(`<h3>Не удалось создать репозиторий</h3><p>У ключа нет права создавать репозитории (GitHub ответил ${r.status}). Это нормально для ключа «только к одному репозиторию».</p><ol class="steps"><li>Откройте <a href="https://github.com/new" target="_blank" rel="noopener">github.com/new</a>, придумайте название (например my-garage), выберите <b>Private</b> и нажмите «Create repository».</li><li>Создайте ключ с доступом к этому репозиторию: Contents — Read and write.</li><li>Вернитесь сюда и впишите <i>логин/название</i> и ключ.</li></ol><button class="btn" data-act="srv" style="width:100%">Понятно</button>`);
@@ -734,10 +774,14 @@ function srvSettings() {
   <label class="f">Ключ GitHub (github_pat_…)<input name="token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(SRV.token)}"></label>
   <div class="sub" style="margin:0 0 12px">Ключ хранится на этом устройстве и не стирается при ошибках связи. На iPhone Safari и значок на экране «Домой» хранят данные раздельно — ключ вводится в каждом один раз. В режиме «Частный доступ» ключ не сохраняется.</div>
   <div class="sub" style="margin:0 0 12px">Статус: ${esc(netText())}${NET.err ? ' — ' + esc(NET.err) : ''} · не отправлено: ${unsentN()} · ждут бота: ${qn() - unsentN()}</div>
-  <div style="display:flex;gap:10px"><button type="button" class="btn sec" data-act="close" style="flex:1">Закрыть</button><button class="btn" style="flex:2">Сохранить и проверить</button></div><button type="button" class="btn sec" data-act="mkrepo" style="width:100%;margin-top:10px">Создать мой гараж (новый закрытый репозиторий)</button>${SRV.token ? `<button type="button" class="btn sec" data-act="disc" style="width:100%;margin-top:10px">Отключить (удалить ключ с устройства)</button>` : ''}</form>`); }
+  <div style="display:flex;gap:10px"><button type="button" class="btn sec" data-act="close" style="flex:1">Закрыть</button><button class="btn" style="flex:2">Сохранить и проверить</button></div><div id="srverr" class="s-red" style="display:none;margin-top:10px;font-weight:600"></div><button type="button" class="btn sec" data-act="diag" style="width:100%;margin-top:10px">Диагностика</button><button type="button" class="btn sec" data-act="mkrepo" style="width:100%;margin-top:10px">Создать мой гараж (новый закрытый репозиторий)</button>${SRV.token ? `<button type="button" class="btn sec" data-act="disc" style="width:100%;margin-top:10px">Отключить (удалить ключ с устройства)</button>` : ''}</form>`); }
 function netText() { return !srvOn() ? 'не настроен' : ({busy: 'синхронизация…', ok: 'синхр. ' + fdt(SY.last), err: 'ошибка', off: 'нет сети', idle: 'ожидание'})[NET.state]; }
 document.addEventListener('submit', e => { if (e.target.id !== 'srvf') return; e.preventDefault(); e.stopImmediatePropagation();
-  const f = new FormData(e.target); SRV = {repo: String(f.get('repo') || '').trim().replace(/^https:\/\/github\.com\//, '').replace(/\/+$/, ''), token: String(f.get('token') || '').replace(/[\s\u200b-\u200d\ufeff]/g, '')};
+  const f = new FormData(e.target), repo = normRepo(f.get('repo')), token = String(f.get('token') || '').replace(/[\s\u200b-\u200d\ufeff]/g, '');
+  const er = $('#srverr'), bad = t => { if (er) { er.textContent = t; er.style.display = 'block'; } toast(t); };
+  if (!/^[A-Za-z0-9-]+\/[A-Za-z0-9._-]+$/.test(repo)) return bad('Репозиторий укажите как логин/название, например ivan/my-garage');
+  if (token && !tokOk(token)) return bad('Ключ не похож на ключ GitHub: он должен начинаться с github_pat_ и копироваться целиком');
+  SRV = {repo, token};
   const own = !!SRV.repo && SRV.repo.toLowerCase() !== OWNER_REPO;
   lsSet(LSV, JSON.stringify(SRV)); VAULT.set('garage:gh', SRV); if (SRV.token && !own) VAULT.set('shared:token', SRV.token); VAULT.persist(); close();
   if (own !== OWN) { setTimeout(() => location.reload(), 300); return; } if (OWN) { SY.privOk = false; saveSY(); } srvSync(true); }, true);
@@ -837,6 +881,7 @@ document.addEventListener('click', e => {
   else if (a === 'cardel') carDel(t.dataset.car);
   else if (a === 'carphoto') pickCarPhoto();
   else if (a === 'mkrepo') mkRepo();
+  else if (a === 'diag') diag();
   else if (a === 'clear') { if (confirm('Удалить локальные изменения с этого устройства?')) { CH = {mileage: [], service: [], budget: []}; save(); markDirty(); close(); render(); } }
 });
 $('#ov').onclick = close;
@@ -846,7 +891,7 @@ theme(); render();
 (async () => {   // ключ: localStorage -> IndexedDB -> общий ключ другого приложения (если у него есть доступ к репозиторию)
   if (!srvOn()) { const o = await VAULT.get('garage:gh'); if (o && o.token) { SRV = o; lsSet(LSV, JSON.stringify(SRV)); if ((SRV.repo.toLowerCase() !== OWNER_REPO) !== OWN) return location.reload(); } }
   if (OWN) { render(); srvSync(); return; }
-  if (!srvOn()) { const t = await VAULT.get('shared:token'); if (t) { try { const r = await fetch(`https://api.github.com/repos/${SRV.repo}`, {headers: {Authorization: 'Bearer ' + t}});
+  if (!srvOn()) { const t = await VAULT.get('shared:token'); if (t) { try { const r = await fetch(`${API}/repos/${SRV.repo}`, {headers: {Authorization: 'Bearer ' + t}});
         if (r.ok) { SRV = {repo: SRV.repo, token: t}; lsSet(LSV, JSON.stringify(SRV)); VAULT.set('garage:gh', SRV); } } catch (e) {} } }
   else VAULT.set('garage:gh', SRV);
   if (srvOn()) VAULT.persist(); render(); srvSync(); })();
