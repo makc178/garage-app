@@ -115,6 +115,11 @@ details[open] .chev{transform:rotate(90deg)}
 .tot{display:grid;grid-template-columns:1fr auto auto;gap:6px 16px;padding:14px 16px;border-top:1px solid var(--line);font-size:14px;font-variant-numeric:tabular-nums}
 .tot .h{color:var(--tx3);font-size:12px}.tot .sum{font-weight:750;font-size:16px}
 .tag{font-size:11px;padding:2px 8px;border-radius:8px;background:rgba(245,165,36,.15);color:var(--amber);font-weight:600;margin-left:6px}
+.cimg{width:76px;height:76px;border-radius:50%;flex:none;object-fit:cover;margin:-4px 0 0 -4px;box-shadow:0 6px 18px rgba(0,0,0,.25);border:2px solid var(--line);background:var(--glass)}
+.card:not(.car) .cimg{width:112px;height:112px}
+@media(max-width:360px){.cimg{width:60px;height:60px}.card:not(.car) .cimg{width:88px;height:88px}}
+.rings .kv{min-width:118px}.rings .kv dd{white-space:nowrap}
+@media(max-width:440px){.rings{flex-wrap:wrap}}
 .tag.chk{background:rgba(245,165,36,.18);color:var(--amber)}
 .phs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.phs .th{width:64px;height:64px;border-radius:12px;border:1px solid var(--line);background:var(--glass) center/cover no-repeat;cursor:pointer;display:grid;place-items:center;color:var(--tx3);font-size:10px;position:relative}
 .phs .th.q::after{content:'';position:absolute;right:4px;top:4px;width:8px;height:8px;border-radius:50%;background:var(--amber)}
@@ -167,6 +172,8 @@ label.f input:focus,label.f select:focus,label.f textarea:focus{border-color:var
 "use strict";
 let DATA = /*__DATA__*/null;
 const LSN = 'garage.snapshot.v1';
+const CARIMG = {"ford-bronco": "cars/ford-bronco.webp", "land-rover-defender": "cars/land-rover-defender.webp", "range-rover-sport": "cars/range-rover-sport.webp"};
+const carImg = n => CARIMG[{'Land Rover Defender': 'land-rover-defender', 'Range Rover Sport': 'range-rover-sport', 'Ford Bronco': 'ford-bronco'}[n] || String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')];
 if (!DATA) { try { DATA = JSON.parse(localStorage.getItem(LSN)); } catch (e) {} }
 const LS = 'garage.changes.v1', LT = 'garage.theme';
 const $ = s => document.querySelector(s);
@@ -267,7 +274,7 @@ const actions = car => `<div class="actions">
 function carCard(c) {
   const osago = insurance().find(p => p.car === c.name && p.type === 'ОСАГО'); const od = osago && osago.to ? days(osago.to) : null;
   return `<div class="glass card car" data-open="${esc(c.name)}">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="nm">${esc(c.name)}</div><span class="plate">${esc(c.plate)}</span></div><span class="muted" style="color:var(--tx3)">${ic('chev')}</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">${carImg(c.name) ? `<img class="cimg" src="${carImg(c.name)}" alt="" loading="lazy" decoding="async">` : ''}<div style="flex:1;min-width:0"><div class="nm">${esc(c.name)}</div><span class="plate">${esc(c.plate)}</span></div><span class="muted" style="color:var(--tx3)">${ic('chev')}</span></div>
     <div class="rings">${ring(c.left, c.interval, stK(c.left), fmt(c.left), 'км до ТО')}
       ${od != null ? ring(od, 365, stD(od), od, 'дн. ОСАГО') : ''}
       <dl class="kv" style="flex:1;margin:0"><dt>Пробег</dt><dd>${km(c.cur)}</dd><dt>След. ТО</dt><dd>${km(c.next)}</dd></dl></div></div>`;
