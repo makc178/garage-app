@@ -251,7 +251,8 @@ function model(c) {
                ...CH.mileage.filter(m => m.car === n).map(m => ({date: m.date, km: m.km, note: m.note, local: 1}))];
   const svc = [...DATA.service.filter(s => s['Машина'] === n).map(s => ({date: s['Дата'], km: s['Пробег, км'], type: s['Вид работ'], what: s['Что сделано / заменено'], shop: s['Сервис'], cost: s['Стоимость, ₽'], next: s['Следующее ТО (км)'], doc: s['Документ / заказ-наряд'], car: n, photos: String(s['Фото'] || '').split(/\s*[;\n]\s*/).filter(Boolean), check: /провер/i.test(String(s['Документ / заказ-наряд'] || '') + String(s['Статус'] || ''))})),
                ...CH.service.filter(s => s.car === n).map(s => ({...s, local: 1}))];
-  const cur = Math.max(c['Пробег, км'] || 0, ...mil.map(m => +m.km || 0), ...svc.map(s => +s.km || 0));
+  // текущий пробег — из таблицы (там «последняя запись», а не максимум); локальные записи с устройства могут его увеличить
+  const cur = typeof c['Пробег, км'] === 'number' ? Math.max(c['Пробег, км'], ...mil.filter(m => m.local).map(m => +m.km || 0), ...svc.filter(s => s.local).map(s => +s.km || 0)) : Math.max(0, ...mil.map(m => +m.km || 0), ...svc.map(s => +s.km || 0));
   const interval = c['Интервал ТО, км'] || 13000;
   let lastTO = c['Посл. ТО: км'] || 0, next = c['След. ТО, км'];
   svc.filter(s => /плановое|^то/i.test(s.type || '')).forEach(s => { if (+s.km > lastTO) { lastTO = +s.km; next = s.next || lastTO + interval; } });
