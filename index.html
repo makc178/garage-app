@@ -296,7 +296,9 @@ const ek = (car, date, km) => `${car}|${String(date || '').slice(0, 10)}|${km ==
 function pdb(mode, fn) { return new Promise((res, rej) => { const o = indexedDB.open('garage-photos', 1);
   o.onupgradeneeded = () => o.result.createObjectStore('img'); o.onerror = () => rej(o.error);
   o.onsuccess = () => { const tx = o.result.transaction('img', mode), r = fn(tx.objectStore('img')); tx.oncomplete = () => res(r && r.result); tx.onerror = () => rej(tx.error); }; }); }
-const pGet = k => pdb('readonly', st => st.get(k)).catch(() => null), pPut = (k, b) => pdb('readwrite', st => st.put(b, k));
+// храним ArrayBuffer, а не Blob: так надёжнее в Safari/WebKit
+const pGet = k => pdb('readonly', st => st.get(k)).then(v => v ? new Blob([v.d], {type: v.t || 'image/jpeg'}) : null).catch(() => null);
+const pPut = async (k, b) => { const d = await b.arrayBuffer(); return pdb('readwrite', st => st.put({t: b.type, d}, k)); };
 async function shrink(file) {   // HEIC и прочее декодирует сам браузер (Safari понимает HEIC)
   let src; try { src = await createImageBitmap(file, {imageOrientation: 'from-image'}); } catch (e) {
     src = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error('не удалось открыть изображение')); im.src = URL.createObjectURL(file); }); }
@@ -310,7 +312,7 @@ async function addPhotos(files, meta) {
   for (const f of files) { try { const b = await shrink(f), id = uid(), date = (meta.date || iso()).slice(0, 10);
       const path = `photos/${slug(meta.car)}/${date}_${id}.jpg`; await pPut(path, b);
       PHQ.push({id, car: meta.car, date: meta.date || null, km: meta.km ?? null, ek: meta.draft ? null : ek(meta.car, meta.date, meta.km), draft: !!meta.draft, path, up: false, ts: new Date().toISOString()}); n++;
-    } catch (e) { toast('Фото не добавлено: ' + e.message); } }
+    } catch (e) { toast('Фото не добавлено: ' + ((e && e.message) || 'ошибка хранилища')); } }
   phSave(); render(); if (n) { toast(srvOn() ? `Фото: ${n}, отправляю` : `Фото: ${n} — сохранены на устройстве, подключите синхронизацию`); srvSoon(); } }
 function phStrip(s) {
   const key = ek(s.car, s.date, s.km), q = PHQ.filter(p => p.ek === key && !(s.photos || []).includes(p.path));
