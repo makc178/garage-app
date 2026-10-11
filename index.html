@@ -173,6 +173,15 @@ label.f input:focus,label.f select:focus,label.f textarea:focus{border-color:var
 <input type="file" id="imp" accept=".json,application/json,text/plain" hidden>
 <script>
 "use strict";
+/* Общее надёжное хранилище для приложений на makc178.github.io (одно происхождение => общий localStorage с лимитом ~5 МБ).
+   Ключи с префиксом приложения; дубль в IndexedDB; navigator.storage.persist(). Ничего не удаляет само. */
+const VAULT = (() => { const DB = 'makc178-vault', ST = 'kv';
+  const db = () => new Promise((res, rej) => { if (!window.indexedDB) return rej(new Error('no idb')); const o = indexedDB.open(DB, 1);
+    o.onupgradeneeded = () => o.result.createObjectStore(ST); o.onsuccess = () => res(o.result); o.onerror = () => rej(o.error); });
+  const get = async k => { const d = await db(); return new Promise((res, rej) => { const r = d.transaction(ST).objectStore(ST).get(k); r.onsuccess = () => res(r.result ?? null); r.onerror = () => rej(r.error); }); };
+  const put = async (k, v) => { const d = await db(); return new Promise((res, rej) => { const t = d.transaction(ST, 'readwrite'); v == null ? t.objectStore(ST).delete(k) : t.objectStore(ST).put(v, k); t.oncomplete = () => res(true); t.onerror = () => rej(t.error); }); };
+  const persist = () => { try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {} };
+  return {get: k => get(k).catch(() => null), set: (k, v) => put(k, v).catch(() => false), persist}; })();
 let DATA = /*__DATA__*/null;
 const LSN = 'garage.snapshot.v1';
 const CARIMG = {"ford-bronco": "cars/ford-bronco.webp", "land-rover-defender": "cars/land-rover-defender.webp", "range-rover-sport": "cars/range-rover-sport.webp"};
@@ -535,12 +544,13 @@ function srvSettings() {
   sheet(`<h3>Синхронизация через GitHub</h3><p class="sub" style="margin:0 0 12px">Записи автоматически уходят в ваш приватный репозиторий, бот вносит их в базу; свежие данные подтягиваются: при открытии, при возврате в приложение и раз в минуту. Без связи записи копятся на устройстве и уйдут позже.</p>
   <form id="srvf"><label class="f">Репозиторий с данными<input name="repo" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="makc178/garage-data" value="${esc(SRV.repo)}"></label>
   <label class="f">Ключ GitHub (github_pat_…)<input name="token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(SRV.token)}"></label>
+  <div class="sub" style="margin:0 0 12px">Ключ хранится на этом устройстве и не стирается при ошибках связи. На iPhone Safari и значок на экране «Домой» хранят данные раздельно — ключ вводится в каждом один раз. В режиме «Частный доступ» ключ не сохраняется.</div>
   <div class="sub" style="margin:0 0 12px">Статус: ${esc(netText())}${NET.err ? ' — ' + esc(NET.err) : ''} · не отправлено: ${unsentN()} · ждут бота: ${qn() - unsentN()}</div>
-  <div style="display:flex;gap:10px"><button type="button" class="btn sec" data-act="close" style="flex:1">Закрыть</button><button class="btn" style="flex:2">Сохранить и проверить</button></div></form>`); }
+  <div style="display:flex;gap:10px"><button type="button" class="btn sec" data-act="close" style="flex:1">Закрыть</button><button class="btn" style="flex:2">Сохранить и проверить</button></div>${SRV.token ? `<button type="button" class="btn sec" data-act="disc" style="width:100%;margin-top:10px">Отключить (удалить ключ с устройства)</button>` : ''}</form>`); }
 function netText() { return !srvOn() ? 'не настроен' : ({busy: 'синхронизация…', ok: 'синхр. ' + fdt(SY.last), err: 'ошибка', off: 'нет сети', idle: 'ожидание'})[NET.state]; }
 document.addEventListener('submit', e => { if (e.target.id !== 'srvf') return; e.preventDefault(); e.stopImmediatePropagation();
-  const f = new FormData(e.target); SRV = {repo: String(f.get('repo') || '').trim().replace(/^https:\/\/github\.com\//, '').replace(/\/+$/, ''), token: String(f.get('token') || '').trim()};
-  lsSet(LSV, JSON.stringify(SRV)); close(); srvSync(true); }, true);
+  const f = new FormData(e.target); SRV = {repo: String(f.get('repo') || '').trim().replace(/^https:\/\/github\.com\//, '').replace(/\/+$/, ''), token: String(f.get('token') || '').replace(/[\s\u200b-\u200d\ufeff]/g, '')};
+  lsSet(LSV, JSON.stringify(SRV)); VAULT.set('garage:gh', SRV); if (SRV.token) VAULT.set('shared:token', SRV.token); VAULT.persist(); close(); srvSync(true); }, true);
 addEventListener('online', () => srvSync()); addEventListener('focus', () => srvSync());
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') srvSync(); });
 addEventListener('pageshow', e => { if (e.persisted) srvSync(); });
@@ -627,6 +637,7 @@ document.addEventListener('click', e => {
   else if (a === 'savecloud') { close(); saveCloud(); }
   else if (a === 'help') help();
   else if (a === 'srv') srvSettings();
+  else if (a === 'disc') { if (confirm('Удалить ключ GitHub с этого устройства?')) { VAULT.get('shared:token').then(t => { if (t === SRV.token) VAULT.set('shared:token', null); SRV = {repo: SRV.repo, token: ''}; lsSet(LSV, JSON.stringify(SRV)); VAULT.set('garage:gh', SRV); render(); }); close(); render(); toast('Ключ удалён'); } }
   else if (a === 'addphoto') pickPhotos({car: t.dataset.car, date: t.dataset.date || null, km: t.dataset.km === '' ? null : +t.dataset.km});
   else if (a === 'wo') woForm(t.dataset.car);
   else if (a === 'theme') theme(true);
@@ -635,7 +646,13 @@ document.addEventListener('click', e => {
 $('#ov').onclick = close;
 document.addEventListener('submit', submit);
 $('#imp').onchange = e => { const f = e.target.files[0]; if (f) importJSON(f); e.target.value = ''; };
-theme(); render(); srvSync();
+theme(); render();
+(async () => {   // ключ: localStorage -> IndexedDB -> общий ключ другого приложения (если у него есть доступ к репозиторию)
+  if (!srvOn()) { const o = await VAULT.get('garage:gh'); if (o && o.token) { SRV = o; lsSet(LSV, JSON.stringify(SRV)); } }
+  if (!srvOn()) { const t = await VAULT.get('shared:token'); if (t) { try { const r = await fetch(`https://api.github.com/repos/${SRV.repo}`, {headers: {Authorization: 'Bearer ' + t}});
+        if (r.ok) { SRV = {repo: SRV.repo, token: t}; lsSet(LSV, JSON.stringify(SRV)); VAULT.set('garage:gh', SRV); } } catch (e) {} } }
+  else VAULT.set('garage:gh', SRV);
+  if (srvOn()) VAULT.persist(); render(); srvSync(); })();
 </script>
 </body>
 </html>
