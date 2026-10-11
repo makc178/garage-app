@@ -143,6 +143,8 @@ details[open] .chev{transform:rotate(90deg)}
 .sheet h3{margin:0 0 14px;font-size:20px}
 label.f{display:block;margin-bottom:12px;font-size:12.5px;color:var(--tx2);font-weight:600}
 label.f input,label.f select,label.f textarea{display:block;width:100%;margin-top:6px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--glass);font-size:16px;outline:none}
+label.f.unsure input{border-color:var(--amber);background:rgba(255,176,32,.10)}label.f.unsure:after{content:'проверьте';color:var(--amber);font-size:11px}
+.prog{height:8px;border-radius:6px;background:var(--glass2);overflow:hidden;margin:10px 0}.prog i{display:block;height:100%;width:0;background:var(--blue);transition:width .3s}
 label.f input:focus,label.f select:focus,label.f textarea:focus{border-color:var(--blue)}
 .toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 14px);transform:translate(-50%,-150%);z-index:60;padding:12px 18px;border-radius:16px;font-weight:600;font-size:14px;transition:transform .4s cubic-bezier(.2,.9,.2,1)}
 .toast.on{transform:translate(-50%,0)}
@@ -365,7 +367,7 @@ const slug = t => String(t || 'car').replace(/[^A-Za-zА-Яа-яЁё0-9]+/g, '-'
 async function addPhotos(files, meta) {
   let n = 0;
   for (const f of files) { try { const b = await shrink(f), id = uid(), date = (meta.date || iso()).slice(0, 10);
-      const path = meta.carimg ? `photos/cars/${id}.jpg` : `photos/${slug(meta.car)}/${date}_${id}.jpg`; await pPut(path, b);
+      const path = meta.doc ? `photos/docs/${id}.jpg` : meta.carimg ? `photos/cars/${id}.jpg` : `photos/${slug(meta.car)}/${date}_${id}.jpg`; await pPut(path, b);
       if (meta.carimg) { PHQ.push({id, carimg: true, path, up: false, ts: new Date().toISOString()}); meta.onpath && meta.onpath(path); n++; continue; }
       PHQ.push({id, car: meta.car, date: meta.date || null, km: meta.km ?? null, ek: meta.draft ? null : ek(meta.car, meta.date, meta.km), draft: !!meta.draft, path, up: false, ts: new Date().toISOString()}); n++;
     } catch (e) { toast('Фото не добавлено: ' + ((e && e.message) || 'ошибка хранилища')); } }
@@ -560,7 +562,7 @@ async function srvSync(manual) {
 const DBF = 'garage-db.json', LOP = 'garage.own.ops.v1';
 let OPS = (() => { try { return JSON.parse(lsGet(LOP)) || []; } catch (e) { return []; } })();
 const opsSave = () => lsSet(LOP, JSON.stringify(OPS));
-const addCarBtn = () => `<div style="margin:0 0 14px"><div class="act glass" data-act="caradd" style="flex-direction:row;justify-content:center"><div class="ic" style="width:32px;height:32px">${ic('plus', 18)}</div>Добавить машину</div></div>`;
+const addCarBtn = () => `<div style="margin:0 0 14px;display:flex;gap:10px"><div class="act glass" data-act="caradd" style="flex:1;flex-direction:row;justify-content:center"><div class="ic" style="width:32px;height:32px">${ic('plus', 18)}</div>Добавить машину</div><div class="act glass" data-act="sts" style="flex:1;flex-direction:row;justify-content:center"><div class="ic" style="width:32px;height:32px">${ic('cam', 18)}</div>Добавить авто по фото СТС</div></div>`;
 const nowB = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 16).replace('T', ' '); };
 const b64u = t => { const u = new TextEncoder().encode(t); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
 function applyOp(db, o) {
@@ -617,18 +619,81 @@ async function ownSync(manual) {
     if (manual) toast('Сохранено в ' + SRV.repo);
   } catch (e) { NET.state = 'err'; NET.err = e.name === 'AbortError' ? 'нет ответа' : (e.message || 'нет связи'); if (manual) toast('Ошибка: ' + NET.err); }
   finally { NET.busy = false; render(); } }
+
+/* ---------- СТС по фото: распознавание в браузере (tesseract.js, грузится только при использовании) ---------- */
+let STSPH = null;
+const TESS = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+const loadTess = () => window.Tesseract ? Promise.resolve() : new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = TESS; sc.onload = res; sc.onerror = () => rej(new Error('не удалось загрузить распознавание (нет сети?)')); document.head.appendChild(sc); });
+function stsForm() { STSPH = null;
+  sheet(`<h3>Добавить авто по фото СТС</h3><p class="sub" style="margin:0 0 12px">Сфотографируйте лицевую сторону СТС ровно, без бликов, при хорошем свете. Оборот — по желанию. Распознавание идёт прямо на телефоне, фото никуда не отправляются.</p>
+  <form id="stsf"><label class="f">Лицевая сторона<input name="a" type="file" accept="image/*" required></label><label class="f">Оборот (необязательно)<input name="b" type="file" accept="image/*"></label>
+  <div id="stsst" class="sub"></div><div class="prog"><i id="stspr"></i></div>
+  <div style="display:flex;gap:10px;margin-top:6px"><button type="button" class="btn sec" data-act="close" style="flex:1">Отмена</button><button class="btn" style="flex:2">Распознать</button></div></form>`); }
+async function prep(file, rot) {
+  let src; try { src = await createImageBitmap(file, {imageOrientation: 'from-image'}); } catch (e) {
+    src = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error('не удалось открыть фото')); im.src = URL.createObjectURL(file); }); }
+  const w0 = src.width || src.naturalWidth, h0 = src.height || src.naturalHeight, k = Math.min(1, 2200 / Math.max(w0, h0)), w = Math.round(w0 * k), h = Math.round(h0 * k);
+  const cv = document.createElement('canvas'), sw = rot % 180 ? h : w, sh = rot % 180 ? w : h; cv.width = sw; cv.height = sh; const g = cv.getContext('2d');
+  g.translate(sw / 2, sh / 2); g.rotate(rot * Math.PI / 180); g.drawImage(src, -w / 2, -h / 2, w, h);
+  const im = g.getImageData(0, 0, sw, sh), d = im.data, hist = new Uint32Array(256);
+  for (let i = 0; i < d.length; i += 4) { const y = (d[i] * .299 + d[i + 1] * .587 + d[i + 2] * .114) | 0; d[i] = y; hist[y]++; }
+  let lo = 0, hi = 255, acc = 0, n = d.length / 4; for (; lo < 255 && (acc += hist[lo]) < n * .02; lo++); acc = 0; for (; hi > 0 && (acc += hist[hi]) < n * .02; hi--);
+  const sc = 255 / Math.max(1, hi - lo); for (let i = 0; i < d.length; i += 4) { const y = Math.max(0, Math.min(255, (d[i] - lo) * sc)); d[i] = d[i + 1] = d[i + 2] = y; }
+  g.setTransform(1, 0, 0, 1, 0, 0); g.putImageData(im, 0, 0); return cv; }
+const LAT2CYR = {A: 'А', B: 'В', E: 'Е', K: 'К', M: 'М', H: 'Н', O: 'О', P: 'Р', C: 'С', T: 'Т', Y: 'У', X: 'Х'};
+const CYR2LAT = Object.fromEntries(Object.entries(LAT2CYR).map(([a, b]) => [b, a]));
+function parseSTS(txt) {
+  const T = txt.toUpperCase().replace(/[‐-―]/g, '-'), lines = T.split(/\n+/).map(l => l.trim()).filter(Boolean), r = {}, sure = {};
+  const after = re => { for (let i = 0; i < lines.length; i++) { const m = re.exec(lines[i]); if (m) { const rest = lines[i].slice(m.index + m[0].length).replace(/^[\s:.,(\)]+/, '').trim(); return rest || lines[i + 1] || ''; } } return ''; };
+  // госномер
+  const cy = T.replace(/[A-Z]/g, ch => LAT2CYR[ch] || ch);
+  const L = '[АВЕКМНОРСТУХ]', pm = new RegExp(`(${L})\\s?(\\d{3})\\s?(${L}{2})\\s?(\\d{2,3})(?!\\d)`).exec(cy.replace(/[|]/g, ''));
+  if (pm) { r.plate = pm[1] + pm[2] + pm[3] + pm[4]; sure.plate = /РЕГИСТРАЦ|ЗНАК/.test(cy.slice(Math.max(0, pm.index - 80), pm.index)); }
+  // VIN
+  const lat = T.replace(/[А-ЯЁ]/g, ch => CYR2LAT[ch] || ch), fixV = v => v.replace(/[IL]/g, '1').replace(/[OQ]/g, '0');
+  const vinLine = after(/VIN|ИДЕНТИФИКАЦИОН/);
+  const toks = l => String(l).replace(/[А-ЯЁ]/g, ch => CYR2LAT[ch] || ch).split(/\s+/).map(t => t.replace(/[^A-Z0-9]/g, ''));
+  const cand = [vinLine, ...lat.split('\n')].flatMap(l => { const t = toks(l); return [...t.filter(x => x.length === 17), t.filter(x => /\d/.test(x)).join('')]; });
+  for (const [i, c] of cand.entries()) { const m = /[A-Z0-9]{17}/.exec(c); if (m) { const v = fixV(m[0]); if (/^[A-HJ-NPR-Z0-9]{17}$/.test(v) && /\d/.test(v) && /[A-Z]/.test(v)) { r.vin = v; sure.vin = i < toks(vinLine).filter(x => x.length === 17).length + 1 && v === m[0]; break; } } }
+  // марка / модель
+  const mm = after(/МАРКА[,.\s]*МОДЕЛЬ|МАРКА/).replace(/^[^A-ZА-Я0-9]+/, '');
+  if (mm) { const parts = mm.split(/\s+/); r.make = parts[0]; r.model = parts.slice(1).join(' '); sure.make = sure.model = mm.length > 2; }
+  // год
+  const y = after(/ГОД\s*ВЫПУСК/).match(/(19[5-9]\d|20[0-4]\d)/) ; if (y) { r.year = y[1]; sure.year = true; } else { const y2 = T.match(/\b(19[89]\d|20[0-3]\d)\b/); if (y2) r.year = y2[1]; }
+  const col = after(/ЦВЕТ/).replace(/[^А-ЯЁ\s-]/g, '').trim(); if (col.length > 2) { r.color = col.toLowerCase(); sure.color = col.length > 3; }
+  const pw = after(/МОЩНОСТЬ/); const pk = pw.match(/(\d{2,3}(?:[.,]\d)?)\s*[\/|]\s*(\d{2,3}(?:[.,]\d)?)/);
+  if (pk) { const a = parseFloat(pk[1].replace(',', '.')), b = parseFloat(pk[2].replace(',', '.')), kw = Math.min(a, b), hp = Math.max(a, b); r.power = `${Math.round(hp)} л.с. / ${kw} кВт`; sure.power = Math.abs(hp / kw - 1.36) < .05; }
+  const sm = /(?<!\d)(\d{2})\s?([0-9АВЕКМНОРСТУХ]{2})\s?(\d{6})(?!\d)/.exec(cy.replace(/№/g, ' '));
+  if (sm) { r.sts = `${sm[1]} ${sm[2]} ${sm[3]}`; sure.sts = /^\d+$/.test(sm[2]); }
+  return {r, unsure: Object.keys(r).filter(k => !sure[k])}; }
+document.addEventListener('submit', async e => { if (e.target.id !== 'stsf') return; e.preventDefault(); e.stopImmediatePropagation();
+  const files = [e.target.a.files[0], e.target.b.files[0]].filter(Boolean), st = t => { const x = $('#stsst'); if (x) x.textContent = t; }, pr = v => { const x = $('#stspr'); if (x) x.style.width = Math.round(v * 100) + '%'; };
+  const btn = e.target.querySelector('button.btn:not(.sec)'); btn.disabled = true;
+  try { st('Загружаю распознавание (один раз, ~15 МБ, потом из кэша)…'); await loadTess();
+    let phase = 0; const worker = await Tesseract.createWorker(['rus', 'eng'], 1, {logger: m => { if (m.progress != null) { pr(phase ? .5 + m.progress / 2 / files.length : m.progress * .5); st((phase ? 'Распознаю текст' : 'Подготовка') + '… ' + Math.round(m.progress * 100) + '%'); } }});
+    phase = 1; let txt = '', best = null;
+    for (const f of files) { for (const rot of [0, 90, 270, 180]) { const {data} = await worker.recognize(await prep(f, rot)); const p = parseSTS(data.text);
+        if (!best || Object.keys(p.r).length > Object.keys(best.r).length) best = p;
+        if (p.r.vin || p.r.plate || data.confidence > 60) { txt += '\n' + data.text; break; } } }
+    await worker.terminate(); const res = parseSTS(txt || ''), out = Object.keys(res.r).length >= Object.keys((best || {r: {}}).r).length ? res : best;
+    window.STS_LAST = {text: txt, out}; STSPH = files; pr(1);
+    const x = out.r; carForm(null, {'Марка': x.make, 'Модель': x.model, 'Госномер': x.plate, 'VIN': x.vin, 'Год': x.year, 'Цвет': x.color, 'Мощность': x.power, 'СТС': x.sts}, out.unsure);
+  } catch (err) { st('Ошибка: ' + (err.message || err)); btn.disabled = false; } }, true);
 function pushOp(o) { OPS.push(o); opsSave(); applyOp(DATA, o); lsSet(LSN, JSON.stringify(DATA)); render(); srvSoon(); }
 let CARPH = null;
 function pickCarPhoto() { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.style.display = 'none';
   i.onchange = () => { if (!i.files.length) return; CARPH = i.files[0]; const l = $('#carphl'); if (l) l.textContent = 'Выбрано: ' + CARPH.name; }; document.body.appendChild(i); i.click(); setTimeout(() => i.remove(), 60000); }
-function carForm(name) {
-  const c = name ? DATA.cars.find(x => x['Машина'] === name) : {}, ins = t => (DATA.insurance || []).find(r => r['Машина'] === name && r['Тип'] === t) || {};
+function carForm(name, pre, unsure) {
+  unsure = new Set(unsure || []); const U = k => unsure.has(k) ? ' unsure' : '';
+  const c = name ? DATA.cars.find(x => x['Машина'] === name) : (pre || {}), ins = t => (DATA.insurance || []).find(r => r['Машина'] === name && r['Тип'] === t) || {};
   const o = ins('ОСАГО'), k = ins('КАСКО'), v = x => esc(x ?? ''), dt = x => { const d = pd(x); return d ? new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10) : ''; };
   CARPH = null;
-  sheet(`<h3>${name ? 'Изменить машину' : 'Новая машина'}</h3><form id="carf" data-id="${v(c.id)}">
-  <label class="f">Марка<input name="make" required value="${v(c['Марка'])}" placeholder="Toyota"></label><label class="f">Модель<input name="model" value="${v(c['Модель'])}" placeholder="Land Cruiser"></label>
-  <label class="f">Госномер<input name="plate" value="${v(c['Госномер'])}"></label><label class="f">VIN<input name="vin" autocapitalize="characters" value="${v(c['VIN'])}"></label>
-  <label class="f">Год<input name="year" type="number" inputmode="numeric" value="${v(c['Год'])}"></label><label class="f">Текущий пробег, км<input name="km" type="number" inputmode="numeric" value="${v(c['Пробег, км'])}"></label>
+  sheet(`<h3>${name ? 'Изменить машину' : 'Новая машина'}</h3>${pre ? '<p class="sub" style="margin:0 0 12px">Распознано по фото СТС. Проверьте все поля перед сохранением: <span class="s-amb">жёлтые</span> распознаны неуверенно, пустые не прочитались.</p>' : ''}<form id="carf" data-id="${v(c.id)}">
+  <label class="f${U('make')}">Марка<input name="make" required value="${v(c['Марка'])}" placeholder="Toyota"></label><label class="f${U('model')}">Модель<input name="model" value="${v(c['Модель'])}" placeholder="Land Cruiser"></label>
+  <label class="f${U('plate')}">Госномер<input name="plate" value="${v(c['Госномер'])}"></label><label class="f${U('vin')}">VIN<input name="vin" autocapitalize="characters" value="${v(c['VIN'])}"></label>
+  <label class="f${U('year')}">Год<input name="year" type="number" inputmode="numeric" value="${v(c['Год'])}"></label><label class="f${U('color')}">Цвет<input name="color" value="${v(c['Цвет'])}"></label>
+  <label class="f${U('power')}">Мощность<input name="power" value="${v(c['Мощность'])}" placeholder="150 л.с. / 110 кВт"></label><label class="f${U('sts')}">Номер СТС<input name="sts" value="${v(c['СТС'])}"></label>
+  ${STSPH ? `<label class="f" style="display:flex;gap:8px;align-items:center"><input type="checkbox" name="keepsts" checked style="width:auto;margin:0">Сохранить фото СТС в мой закрытый репозиторий</label>` : ''}<label class="f">Текущий пробег, км<input name="km" type="number" inputmode="numeric" value="${v(c['Пробег, км'])}"></label>
   <label class="f">Интервал ТО, км<input name="ikm" type="number" inputmode="numeric" value="${v(c['Интервал ТО, км'] || 10000)}"></label><label class="f">Интервал ТО, месяцев<input name="imon" type="number" inputmode="numeric" value="${v(c['Интервал ТО, мес'] || 12)}"></label>
   <label class="f">Последнее ТО: дата<input name="tod" type="date" value="${dt(c['Посл. ТО: дата'])}"></label><label class="f">Последнее ТО: пробег, км<input name="tokm" type="number" inputmode="numeric" value="${v(c['Посл. ТО: км'])}"></label>
   <label class="f">ОСАГО: страховая<input name="oco" value="${v(o['Страховая'])}"></label><label class="f">ОСАГО: начало<input name="ofrom" type="date" value="${dt(o['Начало'])}"></label><label class="f">ОСАГО: окончание<input name="oto" type="date" value="${dt(o['Окончание'])}"></label>
@@ -638,12 +703,14 @@ function carForm(name) {
 document.addEventListener('submit', e => { if (e.target.id !== 'carf') return; e.preventDefault(); e.stopImmediatePropagation();
   const f = Object.fromEntries(new FormData(e.target)), id = e.target.dataset.id || uid(), n = x => x === '' || x == null ? null : +x;
   let nm = `${f.make} ${f.model}`.trim(); if (DATA.cars.some(c => c['Машина'] === nm && c.id !== id)) nm += f.plate ? ' ' + f.plate : ' (2)';
-  const car = {id, 'Машина': nm, 'Марка': f.make.trim(), 'Модель': f.model.trim(), 'Госномер': f.plate.trim(), 'VIN': f.vin.trim().toUpperCase(), 'Год': n(f.year), 'Пробег, км': n(f.km) || 0,
+  const car = {id, 'Машина': nm, 'Марка': f.make.trim(), 'Модель': f.model.trim(), 'Госномер': f.plate.trim(), 'VIN': f.vin.trim().toUpperCase(), 'Год': n(f.year), 'Цвет': (f.color || '').trim(), 'Мощность': (f.power || '').trim(), 'СТС': (f.sts || '').trim(), 'Пробег, км': n(f.km) || 0,
     'Интервал ТО, км': n(f.ikm) || 10000, 'Интервал ТО, мес': n(f.imon) || 12, 'Посл. ТО: дата': f.tod || '', 'Посл. ТО: км': n(f.tokm) || 0};
   car['След. ТО, км'] = (car['Посл. ТО: км'] || 0) + car['Интервал ТО, км'];
   const ins = []; if (f.oto || f.oco) ins.push({'Тип': 'ОСАГО', 'Страховая': f.oco, 'Начало': f.ofrom, 'Окончание': f.oto}); if (f.kto || f.kco) ins.push({'Тип': 'КАСКО', 'Страховая': f.kco, 'Начало': f.kfrom, 'Окончание': f.kto});
-  const ph = CARPH; CARPH = null; close();
+  const ph = CARPH; CARPH = null; const stsF = f.keepsts && STSPH ? STSPH : []; STSPH = null; close();
+  if (stsF.length) addPhotos(stsF, {carimg: true, doc: true, onpath: p => { car['СТС фото'] = [car['СТС фото'], p].filter(Boolean).join('; '); }}).then(() => pushOp({op: "car", car, ins}));
   const done = () => { pushOp({op: 'car', car, ins}); if (state.car) state.car = nm; toast(srvOn() ? 'Машина сохранена' : 'Сохранено на устройстве — подключите GitHub'); };
+  if (stsF.length && !ph) { done(); return; }
   if (ph) addPhotos([ph], {carimg: true, onpath: p => { car['Фото машины'] = p; }}).then(done); else done(); }, true);
 function carDel(name) { const c = DATA.cars.find(x => x['Машина'] === name); if (!c) return;
   if (!confirm(`Удалить ${name} вместе с журналами пробега, ТО, расходами и страховками?`)) return;
@@ -765,6 +832,7 @@ document.addEventListener('click', e => {
   else if (a === 'wo') woForm(t.dataset.car);
   else if (a === 'theme') theme(true);
   else if (a === 'caradd') carForm(null);
+  else if (a === 'sts') stsForm();
   else if (a === 'caredit') carForm(t.dataset.car);
   else if (a === 'cardel') carDel(t.dataset.car);
   else if (a === 'carphoto') pickCarPhoto();
