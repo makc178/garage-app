@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Гараж">
+<meta name="theme-color" content="#070b14">
+<meta name="color-scheme" content="dark light">
+<title>Гараж</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+:root{
+  --bg:#070b14;--bg2:#0d1526;--glass:rgba(255,255,255,.055);--glass2:rgba(255,255,255,.09);
+  --line:rgba(255,255,255,.09);--tx:#eef2f8;--tx2:#9aa6bb;--tx3:#667189;
+  --blue:#3d7bff;--blue2:#1e4fd8;--amber:#f5a524;--red:#ff5d5d;--green:#34c77b;
+  --sh:0 10px 40px rgba(0,0,0,.45);--r:22px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;
+}
+html[data-theme=light]{
+  --bg:#eef1f6;--bg2:#ffffff;--glass:rgba(255,255,255,.72);--glass2:rgba(255,255,255,.9);
+  --line:rgba(15,25,50,.08);--tx:#0e1626;--tx2:#55607a;--tx3:#8a93a8;--sh:0 8px 30px rgba(20,35,80,.10);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:var(--font);-webkit-font-smoothing:antialiased}
+body{min-height:100vh;background:
+  radial-gradient(900px 500px at 85% -10%,rgba(61,123,255,.22),transparent 60%),
+  radial-gradient(700px 420px at -10% 110%,rgba(245,165,36,.12),transparent 60%),var(--bg);background-attachment:fixed}
+button,input,select,textarea{font:inherit;color:inherit}
+svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.app{display:flex;min-height:100vh}
+nav.side{display:none}
+main{flex:1;min-width:0;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 96px);max-width:1180px;margin:0 auto;width:100%}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 2px 18px}
+h1{font-size:32px;font-weight:750;letter-spacing:-.6px;margin:0}
+.sub{color:var(--tx2);font-size:13px;margin-top:2px}
+h2{font-size:13px;font-weight:650;letter-spacing:.6px;text-transform:uppercase;color:var(--tx3);margin:26px 4px 10px}
+.glass{background:var(--glass);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);
+  backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%)}
+.card{padding:16px}
+.grid{display:grid;gap:12px}
+.iconbtn{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;border:1px solid var(--line);background:var(--glass);cursor:pointer}
+.view{animation:in .35s cubic-bezier(.2,.8,.2,1)}
+@keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* bottom nav */
+nav.bottom{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 10px);z-index:20;display:flex;justify-content:space-around;padding:8px 6px;border-radius:26px}
+nav a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;color:var(--tx3);text-decoration:none;padding:4px 8px;border-radius:14px;transition:color .2s,background .2s;cursor:pointer}
+nav a.on{color:var(--amber)}
+/* events */
+.ev{display:flex;align-items:center;gap:14px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.ev:last-child{border-bottom:0}
+.ev .t{flex:1;min-width:0}.ev .t b{display:block;font-weight:600;font-size:15px}.ev .t span{color:var(--tx2);font-size:12.5px}
+.sync{white-space:nowrap;display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--glass);font-size:12.5px;font-weight:600;cursor:pointer;color:var(--tx2)}
+.sync .dt{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green)}
+.sync.busy .dt{background:var(--blue);box-shadow:0 0 10px var(--blue);animation:pl 1.4s infinite}
+.sync.dirty{color:var(--amber);border-color:rgba(245,165,36,.4)}.sync.dirty .dt{background:var(--amber);box-shadow:0 0 10px var(--amber);animation:pl 1.4s infinite}
+header.top>div:first-child{min-width:0;flex:1 1 auto}
+header.top h1{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+header.top .hbtns{display:flex;gap:8px;align-items:center;flex:0 0 auto}
+main{padding-left:calc(env(safe-area-inset-left) + 16px);padding-right:calc(env(safe-area-inset-right) + 16px)}
+@media(max-width:440px){header.top{flex-wrap:wrap;gap:8px}header.top h1{font-size:26px}header.top .hbtns{gap:6px}header.top .iconbtn{width:34px;height:34px;border-radius:11px}header.top .iconbtn svg.i{width:18px;height:18px}header.top .sync{padding:6px 9px;font-size:11.5px}}
+@media(max-width:360px){header.top .hbtns{width:100%;justify-content:flex-end}header.top .iconbtn{width:32px;height:32px}}
+@keyframes pl{50%{opacity:.35}}
+@supports(-webkit-touch-callout:none){body{background-attachment:scroll}}
+.steps{margin:0 0 14px;padding-left:20px;color:var(--tx2);line-height:1.5}.steps b{color:var(--tx)}
+.badge{font-weight:700;font-size:13px;padding:6px 10px;border-radius:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.s-red{color:var(--red)}.s-amb{color:var(--amber)}.s-grn{color:var(--green)}
+.b-red{background:rgba(255,93,93,.14);color:var(--red)}.b-amb{background:rgba(245,165,36,.15);color:var(--amber)}.b-grn{background:rgba(52,199,123,.13);color:var(--green)}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;box-shadow:0 0 12px currentColor;background:currentColor}
+/* car card */
+.car{position:relative;overflow:hidden;cursor:pointer;transition:transform .25s}
+.car:active{transform:scale(.985)}
+.car::after{content:"";position:absolute;inset:auto -40px -60px auto;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(61,123,255,.25),transparent 70%);pointer-events:none}
+.car .nm{font-size:20px;font-weight:700;letter-spacing:-.3px}
+.plate{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:13px;font-weight:600;padding:3px 9px;border-radius:8px;border:1px solid var(--line);background:var(--glass2);letter-spacing:.5px}
+.rings{display:flex;gap:18px;margin-top:16px;align-items:center}
+.ring{position:relative;width:86px;height:86px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:8}.ring .bgc{stroke:var(--line)}
+.ring .fg{stroke-linecap:round;transition:stroke-dashoffset 1.1s cubic-bezier(.2,.8,.2,1)}
+.ring .lbl{position:absolute;inset:0;display:grid;place-items:center;text-align:center;line-height:1.05}
+.ring .lbl b{font-size:17px;font-variant-numeric:tabular-nums}.ring .lbl small{display:block;font-size:10px;color:var(--tx2)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}.kv dt{color:var(--tx2)}.kv dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;word-break:break-all}
+.bar{height:8px;border-radius:8px;background:var(--line);overflow:hidden;margin-top:8px}
+.bar i{display:block;height:100%;border-radius:8px;width:0;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.big{font-size:30px;font-weight:750;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+/* buttons */
+.actions{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.act{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 6px;font-size:12.5px;font-weight:600;cursor:pointer;border-radius:18px;transition:transform .2s}
+.act:active{transform:scale(.96)}
+.act .ic{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,var(--blue),var(--blue2));color:#fff;box-shadow:0 6px 18px rgba(61,123,255,.35)}
+.act.am .ic{background:linear-gradient(145deg,#ffbd45,#e08a00);box-shadow:0 6px 18px rgba(245,165,36,.35)}
+.btn{border:0;border-radius:14px;padding:13px 18px;font-weight:650;cursor:pointer;background:linear-gradient(145deg,var(--blue),var(--blue2));color:#fff;box-shadow:0 6px 18px rgba(61,123,255,.3)}
+.btn.sec{background:var(--glass2);color:var(--tx);box-shadow:none;border:1px solid var(--line)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
+.chip{white-space:nowrap;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--glass);font-size:13.5px;font-weight:600;cursor:pointer;transition:all .2s}
+.chip.on{background:var(--amber);color:#1a1100;border-color:transparent}
+/* TO plan */
+details.svc{margin-bottom:12px;overflow:hidden}
+details.svc summary{list-style:none;cursor:pointer;padding:16px;display:flex;align-items:center;gap:12px}
+details.svc summary::-webkit-details-marker{display:none}
+.svc .km{font-size:19px;font-weight:700}.svc .chev{transition:transform .3s;color:var(--tx3)}
+details[open] .chev{transform:rotate(90deg)}
+.work{padding:12px 16px;border-top:1px solid var(--line)}
+.work .wh{display:flex;justify-content:space-between;gap:10px;font-weight:600;font-size:14.5px}
+.work .wh span{color:var(--tx2);font-weight:500;white-space:nowrap;font-size:13px}
+.part{margin:8px 0 0 10px;padding:9px 12px;border-radius:14px;background:var(--glass2);font-size:13px}
+.part b{font-weight:600}.part .m{color:var(--tx2);margin-top:3px;display:grid;grid-template-columns:auto 1fr;gap:2px 10px}
+.part .m em{font-style:normal;color:var(--tx3)}
+.tot{display:grid;grid-template-columns:1fr auto auto;gap:6px 16px;padding:14px 16px;border-top:1px solid var(--line);font-size:14px;font-variant-numeric:tabular-nums}
+.tot .h{color:var(--tx3);font-size:12px}.tot .sum{font-weight:750;font-size:16px}
+.tag{font-size:11px;padding:2px 8px;border-radius:8px;background:rgba(245,165,36,.15);color:var(--amber);font-weight:600;margin-left:6px}
+.tag.new{background:rgba(61,123,255,.18);color:var(--blue)}
+.row{display:flex;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px}
+.row:last-child{border-bottom:0}.row .l{min-width:0}.row .l small{display:block;color:var(--tx2);font-size:12.5px;margin-top:2px}
+.row .r{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600}
+.muted{color:var(--tx2);font-size:13px}
+.back{display:inline-flex;align-items:center;gap:4px;color:var(--blue);cursor:pointer;font-weight:600;margin-bottom:8px}
+/* sheet */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;opacity:0;pointer-events:none;transition:opacity .3s}
+.ov.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;max-width:520px;margin:0 auto;padding:10px 20px calc(env(safe-area-inset-bottom) + 20px);border-radius:28px 28px 0 0;background:var(--bg2);border:1px solid var(--line);transform:translateY(105%);transition:transform .4s cubic-bezier(.2,.9,.2,1);max-height:90vh;overflow:auto}
+.sheet.on{transform:none}
+.sheet .grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 12px}
+.sheet h3{margin:0 0 14px;font-size:20px}
+label.f{display:block;margin-bottom:12px;font-size:12.5px;color:var(--tx2);font-weight:600}
+label.f input,label.f select,label.f textarea{display:block;width:100%;margin-top:6px;padding:12px 14px;border-radius:14px;border:1px solid var(--line);background:var(--glass);font-size:16px;outline:none}
+label.f input:focus,label.f select:focus,label.f textarea:focus{border-color:var(--blue)}
+.toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 14px);transform:translate(-50%,-150%);z-index:60;padding:12px 18px;border-radius:16px;font-weight:600;font-size:14px;transition:transform .4s cubic-bezier(.2,.9,.2,1)}
+.toast.on{transform:translate(-50%,0)}
+/* desktop */
+@media (min-width:900px){
+  nav.bottom{display:none}
+  nav.side{display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh;width:240px;padding:28px 14px;border-right:1px solid var(--line);background:var(--glass);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+  nav.side .logo{display:flex;align-items:center;gap:10px;font-weight:750;font-size:20px;padding:0 10px 22px}
+  nav.side .logo img{width:34px;height:34px;border-radius:10px}
+  nav.side a{flex-direction:row;gap:12px;font-size:15px;padding:11px 14px;color:var(--tx2)}
+  nav.side a.on{background:var(--glass2);color:var(--tx)}nav.side a.on svg{color:var(--amber)}
+  main{padding:30px 36px 40px}
+  .g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .sheet{bottom:auto;top:50%;border-radius:28px;transform:translateY(-40%) scale(.96);opacity:0;pointer-events:none;transition:all .3s}
+  .sheet.on{transform:translateY(-50%);opacity:1;pointer-events:auto}.sheet .grab{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="side" id="side"></nav>
+  <main id="main"></main>
+</div>
+<nav class="bottom glass" id="bottom"></nav>
+<div class="ov" id="ov"></div>
+<div class="sheet" id="sheet"></div>
+<div class="toast glass" id="toast"></div>
+<input type="file" id="imp" accept=".json,application/json,text/plain" hidden>
+<script>
+"use strict";
+let DATA = /*__DATA__*/null;
+const LSN = 'garage.snapshot.v1';
+if (!DATA) { try { DATA = JSON.parse(localStorage.getItem(LSN)); } catch (e) {} }
+const LS = 'garage.changes.v1', LT = 'garage.theme';
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => n == null || n === '' || isNaN(n) ? '—' : Math.round(n).toLocaleString('ru-RU').replace(/,/g, ' ');
+const rub = n => n == null || n === '' ? '—' : fmt(n) + ' ₽';
+const km = n => n == null ? '—' : fmt(n) + ' км';
+const today = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+const pd = s => { if (!s) return null; let m;
+  if ((m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s))) return new Date(+m[1], m[2]-1, +m[3]);
+  if ((m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(s))) return new Date(+m[3], m[2]-1, +m[1]);
+  if ((m = /^(\d{2})\.(\d{4})$/.exec(s))) return new Date(+m[2], m[1]-1, 1); return null; };
+const fd = d => d ? d.toLocaleDateString('ru-RU', {day:'numeric', month:'short', year:'numeric'}) : 'дата не указана';
+const days = d => Math.round((d - today()) / 864e5);
+const plural = (n, a, b, c) => { const x = Math.abs(n) % 100, y = x % 10; return x > 10 && x < 20 ? c : y === 1 ? a : y > 1 && y < 5 ? b : c; };
+const dlabel = n => n < 0 ? 'просрочено' : n === 0 ? 'сегодня' : n + ' ' + plural(n, 'день', 'дня', 'дней');
+const stD = n => n <= 30 ? 'red' : n <= 90 ? 'amb' : 'grn';
+const stK = n => n <= 1000 ? 'red' : n <= 3000 ? 'amb' : 'grn';
+const COL = {red:'var(--red)', amb:'var(--amber)', grn:'var(--green)'};
+const short = n => ({'Land Rover Defender':'Defender','Range Rover Sport':'Range Rover Sport','Ford Bronco':'Bronco'}[n] || n);
+
+const I = {
+  home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
+  car:'<path d="M5 17h14M3 13l2-6a2 2 0 0 1 2-1.4h10A2 2 0 0 1 19 7l2 6v4a1 1 0 0 1-1 1h-1.5M3 13v4a1 1 0 0 0 1 1h1.5M3 13h18"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="16.5" cy="17" r="1.8"/>',
+  wrench:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L3 17.8V21h3.2l6.3-6.3a4 4 0 0 0 5.2-5.4l-2.6 2.6-2.4-.4-.4-2.4z"/>',
+  shield:'<path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+  wallet:'<rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18M16 15h2"/><path d="M6 6V5a2 2 0 0 1 2-2h9"/>',
+  gauge:'<path d="M12 14l4-4"/><path d="M3.5 18a9 9 0 1 1 17 0"/><circle cx="12" cy="14" r="1.5"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  tool:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L3 17.8V21h3.2l6.3-6.3a4 4 0 0 0 5.2-5.4l-2.6 2.6-2.4-.4-.4-2.4z"/>',
+  ruble:'<path d="M8 21V4h6a4 4 0 0 1 0 8H6M6 16h8"/>',
+  down:'<path d="M12 4v12M6 11l6 6 6-6M5 20h14"/>', up:'<path d="M12 20V8M6 13l6-6 6 6M5 4h14"/>',
+  moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>', chev:'<path d="M9 6l6 6-6 6"/>', left:'<path d="M15 6l-6 6 6 6"/>',
+  cloud:'<path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19.5 10 4 4 0 0 1 18 18z"/>', help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/>',
+  doc:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>'
+};
+const ic = (n, s) => `<svg class="i" viewBox="0 0 24 24"${s ? ` style="width:${s}px;height:${s}px"` : ''}>${I[n]}</svg>`;
+
+/* ---------- данные ---------- */
+let CH = load();
+function load() { try { const o = JSON.parse(lsGet(LS)); if (o && o.mileage) return o; } catch (e) {} return {mileage: [], service: [], budget: []}; }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { try { toast('Не удалось сохранить локально — сохраните в iCloud'); } catch (_) {} } }
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function save() { lsSet(LS, JSON.stringify(CH)); }
+const cars = () => DATA.cars.map(c => model(c));
+function model(c) {
+  const n = c['Машина'];
+  const mil = [...DATA.mileage.filter(m => m['Машина'] === n).map(m => ({date: m['Дата'], km: m['Пробег, км'], note: m['Комментарий']})),
+               ...CH.mileage.filter(m => m.car === n).map(m => ({date: m.date, km: m.km, note: m.note, local: 1}))];
+  const svc = [...DATA.service.filter(s => s['Машина'] === n).map(s => ({date: s['Дата'], km: s['Пробег, км'], type: s['Вид работ'], what: s['Что сделано / заменено'], shop: s['Сервис'], cost: s['Стоимость, ₽'], next: s['Следующее ТО (км)'], doc: s['Документ / заказ-наряд']})),
+               ...CH.service.filter(s => s.car === n).map(s => ({...s, local: 1}))];
+  const cur = Math.max(c['Пробег, км'] || 0, ...mil.map(m => +m.km || 0), ...svc.map(s => +s.km || 0));
+  const interval = c['Интервал ТО, км'] || 13000;
+  let lastTO = c['Посл. ТО: км'] || 0, next = c['След. ТО, км'];
+  svc.filter(s => /плановое|^то/i.test(s.type || '')).forEach(s => { if (+s.km > lastTO) { lastTO = +s.km; next = s.next || lastTO + interval; } });
+  if (!next) next = lastTO + interval;
+  mil.sort((a, b) => (b.date || '').localeCompare(a.date || '') || b.km - a.km);
+  svc.sort((a, b) => (b.km || 0) - (a.km || 0));
+  return {raw: c, name: n, plate: c['Госномер'], vin: c['VIN'], cur, next, left: next - cur, interval, lastTO, mil, svc, plan: DATA.plans[n]};
+}
+function insurance() { return DATA.insurance.map(p => ({car: p['Машина'], type: p['Тип'], co: p['Страховая'], num: p['Номер полиса'], from: pd(p['Начало']), to: pd(p['Окончание']), cost: p['Стоимость, ₽'], note: p['Примечание'], file: p['Полис (файл)']})); }
+function budget() { return [...DATA.budget.map(b => ({car: b['Машина'], item: b['Статья'], plan: b['План, ₽'], due: b['Срок'], fact: b['Факт, ₽'], status: b['Статус'], note: b['Комментарий']})),
+                            ...CH.budget.map(b => ({...b, local: 1}))]; }
+function events() {
+  const ev = [];
+  insurance().forEach(p => p.to && ev.push({t: `${p.type} ${short(p.car)}`, s: `${p.co} · до ${fd(p.to)}`, d: days(p.to), ic: 'shield'}));
+  budget().forEach(b => { const d = pd(b.due); if (d && !b.fact) ev.push({t: `${b.item} · ${short(b.car)}`, s: `${b.plan ? rub(b.plan) + ' · ' : ''}${fd(d)}`, d: days(d), ic: 'wallet'}); });
+  ev.sort((a, b) => a.d - b.d);
+  const to = cars().map(c => ({t: `ТО ${short(c.name)}`, s: `на ${km(c.next)} · сейчас ${km(c.cur)}`, k: c.left, ic: 'wrench'})).sort((a, b) => a.k - b.k);
+  return {ev, to};
+}
+
+/* ---------- UI ---------- */
+const TABS = [['sum', 'Сводка', 'home'], ['cars', 'Машины', 'car'], ['to', 'ТО', 'wrench'], ['ins', 'Страховки', 'shield'], ['bud', 'Бюджет', 'wallet']];
+let state = {tab: 'sum', car: null, toCar: DATA && DATA.cars[0] ? DATA.cars[0]['Машина'] : null, toOpen: 0};
+function nav() {
+  const a = TABS.map(([k, t, i]) => `<a data-tab="${k}" class="${state.tab === k ? 'on' : ''}">${ic(i)}<span>${t}</span></a>`).join('');
+  $('#bottom').innerHTML = a;
+  $('#side').innerHTML = `<div class="logo"><img src="${$('link[rel=apple-touch-icon]').href}" alt="">Гараж</div>${a}
+    <div style="flex:1"></div><a data-act="open">${ic('up')}<span>Открыть данные из iCloud</span></a><a data-act="savecloud">${ic('cloud')}<span>Сохранить в iCloud</span></a><a data-act="srv">${ic('cloud')}<span>Синхронизация GitHub</span></a><a data-act="help">${ic('help')}<span>Как синхронизировать</span></a><a data-act="theme">${ic('moon')}<span>Тема</span></a>`;
+}
+function go(tab, extra) { Object.assign(state, {tab, car: null}, extra || {}); render(); window.scrollTo({top: 0, behavior: 'smooth'}); }
+function ring(val, max, st, big, small) {
+  const r = 37, C = 2 * Math.PI * r, p = Math.max(0, Math.min(1, val / max));
+  return `<div class="ring"><svg viewBox="0 0 86 86" width="86" height="86"><circle class="bgc" cx="43" cy="43" r="${r}"/>
+  <circle class="fg" cx="43" cy="43" r="${r}" stroke="${COL[st]}" stroke-dasharray="${C}" stroke-dashoffset="${C}" data-off="${C * (1 - p)}"/></svg>
+  <div class="lbl"><div><b class="s-${st}">${big}</b><small>${small}</small></div></div></div>`;
+}
+function head(title, sub) {
+  return `<header class="top"><div><h1>${title}</h1>${sub ? `<div class="sub">${sub}</div>` : ''}</div>
+  <div class="hbtns">${syncBadge()}<button class="iconbtn" data-act="open" title="Открыть данные из iCloud">${ic('up', 20)}</button><button class="iconbtn" data-act="savecloud" title="Сохранить в iCloud">${ic('cloud', 20)}</button><button class="iconbtn" data-act="help" title="Как синхронизировать">${ic('help', 20)}</button><button class="iconbtn" data-act="theme" title="Тема">${ic('moon', 20)}</button></div></header>`;
+}
+const actions = car => `<div class="actions">
+  <div class="act glass" data-act="mileage" data-car="${esc(car || '')}"><div class="ic">${ic('gauge')}</div>Внести пробег</div>
+  <div class="act glass" data-act="service" data-car="${esc(car || '')}"><div class="ic">${ic('tool')}</div>ТО / ремонт</div>
+  <div class="act glass am" data-act="expense" data-car="${esc(car || '')}"><div class="ic">${ic('ruble')}</div>Добавить расход</div></div>`;
+function carCard(c) {
+  const osago = insurance().find(p => p.car === c.name && p.type === 'ОСАГО'); const od = osago && osago.to ? days(osago.to) : null;
+  return `<div class="glass card car" data-open="${esc(c.name)}">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div class="nm">${esc(c.name)}</div><span class="plate">${esc(c.plate)}</span></div><span class="muted" style="color:var(--tx3)">${ic('chev')}</span></div>
+    <div class="rings">${ring(c.left, c.interval, stK(c.left), fmt(c.left), 'км до ТО')}
+      ${od != null ? ring(od, 365, stD(od), od, 'дн. ОСАГО') : ''}
+      <dl class="kv" style="flex:1;margin:0"><dt>Пробег</dt><dd>${km(c.cur)}</dd><dt>След. ТО</dt><dd>${km(c.next)}</dd></dl></div></div>`;
+}
+function vSum() {
+  const {ev, to} = events(); const n = CH.mileage.length + CH.service.length + CH.budget.length;
+  const total = budget().reduce((s, b) => s + (+b.plan || 0), 0);
+  return head('Гараж', `Таблица от ${esc(String(DATA.built).slice(8,10) + '.' + String(DATA.built).slice(5,7) + ' ' + String(DATA.built).slice(11))}${n ? ` · локально: ${n}` : ''}`) + actions() +
+  `<div class="grid g2"><div><h2>Ближайшие события</h2><div class="glass">${ev.map(e => { const st = stD(e.d);
+    return `<div class="ev"><span class="dot s-${st}"></span><div class="t"><b>${esc(e.t)}</b><span>${e.s}</span></div><span class="badge b-${st}">${dlabel(e.d)}</span></div>`; }).join('')}</div></div>
+  <div><h2>До ТО</h2><div class="glass">${to.map(e => { const st = stK(e.k), c = cars().find(x => 'ТО ' + short(x.name) === e.t);
+    return `<div class="ev" style="flex-wrap:wrap"><span class="dot s-${st}"></span><div class="t"><b>${esc(e.t)}</b><span>${e.s}</span></div><span class="badge b-${st}">${fmt(e.k)} км</span>
+    <div class="bar" style="flex-basis:100%"><i data-w="${Math.max(3, 100 - e.k / c.interval * 100)}" style="background:${COL[st]}"></i></div></div>`; }).join('')}</div>
+  <h2>Бюджет (план)</h2><div class="glass card" data-tab="bud" style="cursor:pointer"><div class="big">${rub(total)}</div><div class="muted">${budget().length} статей · откройте «Бюджет»</div></div></div></div>
+  <h2>Машины</h2><div class="grid g3">${cars().map(carCard).join('')}</div>`;
+}
+function vCars() {
+  if (state.car) return vCar(cars().find(c => c.name === state.car));
+  return head('Машины', `${DATA.cars.length} автомобиля`) + `<div class="grid g3">${cars().map(carCard).join('')}</div>`;
+}
+function svcRow(s) {
+  return `<div class="row"><div class="l"><b>${esc(s.type || 'Запись')}</b>${s.local ? '<span class="tag new">новое</span>' : ''}<small>${s.date ? fd(pd(s.date)) : 'дата не указана'} · ${km(s.km)}${s.shop ? ' · ' + esc(s.shop) : ''}</small>
+  ${s.what ? `<small>${esc(s.what)}</small>` : ''}${s.doc ? `<small>${ic('doc', 13)} ${esc(s.doc)}</small>` : ''}</div><div class="r">${s.cost ? rub(s.cost) : ''}</div></div>`;
+}
+function vCar(c) {
+  const r = c.raw, pol = insurance().filter(p => p.car === c.name);
+  const fields = [['Госномер', c.plate], ['VIN', c.vin], ['Год', r['Год']], ['Мощность', r['Мощность']], ['Цвет', r['Цвет']], ['СТС', r['СТС']], ['ПТС', r['ПТС (ЭПТС)']], ['Интервал ТО', km(c.interval)]];
+  return `<div class="back" data-tab="cars">${ic('left', 18)} Машины</div>` + head(esc(c.name), esc(r['Примечания'] || '')) +
+  `<div class="grid g2"><div>${carCard(c).replace('class="glass card car"', 'class="glass card"')}
+  <h2>Действия</h2>${actions(c.name)}
+  <h2>Данные</h2><div class="glass card"><dl class="kv">${fields.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v ?? '—')}</dd>`).join('')}</dl></div>
+  <h2>Страховки</h2><div class="glass">${pol.map(p => { const d = days(p.to); return `<div class="row"><div class="l"><b>${p.type} · ${esc(p.co)}</b><small>${esc(p.num)} · до ${fd(p.to)}</small></div><div class="r"><span class="badge b-${stD(d)}">${dlabel(d)}</span></div></div>`; }).join('') || '<div class="row muted">Нет данных</div>'}</div></div>
+  <div><h2>Следующее ТО</h2>${c.plan ? planBlock(c, true) : '<div class="glass card muted">План ТО не найден</div>'}
+  <h2>История ТО и ремонтов</h2><div class="glass">${c.svc.map(svcRow).join('') || '<div class="row muted">Нет записей</div>'}</div>
+  <h2>История пробега</h2><div class="glass">${c.mil.map(m => `<div class="row"><div class="l">${m.date ? fd(pd(m.date)) : '—'}${m.local ? '<span class="tag new">новое</span>' : ''}${m.note ? `<small>${esc(m.note)}</small>` : ''}</div><div class="r">${km(m.km)}</div></div>`).join('')}</div></div></div>`;
+}
+function svcBlock(s, open, c) {
+  const due = s.km - c.cur;
+  return `<details class="svc glass"${open ? ' open' : ''}><summary><div style="flex:1"><div class="km">ТО ${km(s.km)}${due <= 0 ? '<span class="tag">пора</span>' : ''}</div>
+  <div class="muted">${esc(s.name.replace(/^ТО-[\d\s ]+км\s*/, ''))}</div><div class="muted">${due > 0 ? 'через ' + km(due) : 'просрочено на ' + km(-due)}</div></div>
+  <div style="text-align:right"><div style="font-weight:750">${rub(s.totalOem)}</div><div class="muted">аналог ${rub(s.totalAnalog)}</div></div><span class="chev">${ic('chev')}</span></summary>
+  ${s.works.map(w => `<div class="work"><div class="wh"><div>${esc(w.name)}${w.optional ? '<span class="tag">опция</span>' : ''}</div><span>${w.hours ? w.hours + ' н/ч · ' : ''}${rub(w.labor)}</span></div>
+    ${w.parts.map(p => `<div class="part"><b>${esc(p.name)}</b><div class="m"><em>Кол-во</em><span>${esc(p.qty ?? '—')}</span><em>Артикул</em><span>${esc(p.oem ?? '—')}</span><em>Аналог</em><span>${esc(p.analog ?? '—')}</span>
+      <em>Цена</em><span>ориг. ${rub(p.priceOem)} · аналог ${rub(p.priceAnalog)}</span>${p.note ? `<em>Прим.</em><span>${esc(p.note)}</span>` : ''}</div></div>`).join('')}</div>`).join('')}
+  <div class="tot"><span class="h"></span><span class="h">Оригинал</span><span class="h">Аналог</span>
+   <span>Работы</span><span>${rub(s.labor)}</span><span>${rub(s.labor)}</span>
+   <span>Запчасти</span><span>${rub(s.partsOem)}</span><span>${rub(s.partsAnalog)}</span>
+   <span class="sum">Итого</span><span class="sum">${rub(s.totalOem)}</span><span class="sum s-amb">${rub(s.totalAnalog)}</span></div>
+  ${s.totalNote ? `<div class="muted" style="padding:0 16px 14px">${esc(s.totalNote)}</div>` : ''}</details>`;
+}
+function planBlock(c, onlyNext) {
+  const list = c.plan.services.filter(s => s.km >= c.next - 1) .concat([]);
+  const show = onlyNext ? list.slice(0, 1) : (list.length ? list : c.plan.services);
+  return show.map((s, i) => svcBlock(s, onlyNext || i === 0, c)).join('');
+}
+function vTO() {
+  const c = cars().find(x => x.name === state.toCar);
+  return head('План ТО', 'Работы, запчасти и стоимость с учётом работ') +
+  `<div class="chips">${cars().map(x => `<span class="chip ${x.name === c.name ? 'on' : ''}" data-tocar="${esc(x.name)}">${esc(short(x.name))}</span>`).join('')}</div>
+  <div class="glass card" style="margin:10px 0 14px"><div style="display:flex;gap:16px;align-items:center">${ring(c.left, c.interval, stK(c.left), fmt(c.left), 'км до ТО')}
+  <div><div style="font-weight:700">${esc(c.plan ? c.plan.title : c.name)}</div><div class="muted" style="margin-top:4px">${esc(c.plan ? c.plan.note : '')}</div></div></div></div>
+  <div class="grid g2" style="align-items:start">${c.plan ? planBlock(c, false) : '<div class="glass card muted">Нет плана</div>'}</div>
+  <h2>Расценки</h2><div class="glass">${DATA.rates.map(r => `<div class="row"><div class="l">${esc(r['Параметр'])}<small>${esc(r['Источник / комментарий'] || '')}</small></div><div class="r">${typeof r['Значение'] === 'number' ? rub(r['Значение']) : esc(r['Значение'])}</div></div>`).join('')}</div>`;
+}
+function vIns() {
+  const ps = insurance().sort((a, b) => a.to - b.to);
+  return head('Страховки', 'ОСАГО и КАСКО') + `<div class="grid g2">${ps.map(p => { const d = days(p.to), tot = (p.to - p.from) / 864e5 || 365, st = stD(d);
+    return `<div class="glass card"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div class="muted">${esc(short(p.car))}</div><div class="nm" style="font-size:20px;font-weight:700">${p.type} · ${esc(p.co)}</div><span class="plate">${esc(p.num)}</span></div>${ring(d, tot, st, d, 'дней')}</div>
+    <div class="bar"><i data-w="${Math.max(2, Math.min(100, (1 - d / tot) * 100))}" style="background:linear-gradient(90deg,var(--blue),${COL[st]})"></i></div>
+    <dl class="kv" style="margin-top:14px"><dt>Период</dt><dd>${fd(p.from)} — ${fd(p.to)}</dd><dt>Стоимость</dt><dd>${rub(p.cost)}</dd></dl>${p.note ? `<div class="muted" style="margin-top:10px">${esc(p.note)}</div>` : ''}</div>`; }).join('')}</div>`;
+}
+function vBud() {
+  const b = budget(), tot = b.reduce((s, x) => s + (+x.plan || 0), 0), fact = b.reduce((s, x) => s + (+x.fact || 0), 0);
+  const by = {}; b.forEach(x => by[x.car] = (by[x.car] || 0) + (+x.plan || 0));
+  return head('Бюджет', 'Плановые расходы на авто') + `<div class="glass card"><div class="muted">Всего по плану</div><div class="big">${rub(tot)}</div><div class="muted">Факт: ${rub(fact)}</div>
+  ${Object.entries(by).map(([k, v]) => `<div style="margin-top:12px;display:flex;justify-content:space-between;font-size:14px"><span>${esc(short(k))}</span><b>${rub(v)}</b></div><div class="bar"><i data-w="${tot ? v / tot * 100 : 0}" style="background:linear-gradient(90deg,var(--blue),var(--amber))"></i></div>`).join('')}</div>
+  <div style="margin:14px 0">${`<div class="act glass am" data-act="expense" style="flex-direction:row;justify-content:center"><div class="ic" style="width:32px;height:32px">${ic('plus', 18)}</div>Добавить расход</div>`}</div>
+  <div class="glass">${b.map(x => `<div class="row"><div class="l"><b>${esc(x.item)}</b>${x.local ? '<span class="tag new">новое</span>' : ''}<small>${esc(short(x.car))}${x.due ? ' · ' + esc(x.due) : ''}${x.note ? ' · ' + esc(x.note) : ''}</small></div><div class="r">${x.plan ? rub(x.plan) : '<span class="muted">сумма?</span>'}${x.fact ? `<small class="muted" style="display:block">факт ${rub(x.fact)}</small>` : ''}</div></div>`).join('')}</div>`;
+}
+function render() {
+  nav();
+  if (!DATA || !DATA.cars) { $('#main').innerHTML = `<div class="view"><header class="top"><div><h1>Гараж</h1><div class="sub">Нет данных на этом устройстве</div></div><div class="hbtns">${syncBadge()}</div></header><div class="glass card"><p style="margin:0 0 14px">Подключите синхронизацию с GitHub: нажмите кнопку и введите ключ доступа. Данные загрузятся автоматически.</p><button class="btn" data-act="srv">Подключить</button></div></div>`; return; }
+  if (!state.toCar) state.toCar = DATA.cars[0]['Машина'];
+  const v = {sum: vSum, cars: vCars, to: vTO, ins: vIns, bud: vBud}[state.tab]();
+  $('#main').innerHTML = `<div class="view">${v}</div>`;
+  requestAnimationFrame(() => setTimeout(() => {
+    document.querySelectorAll('.ring .fg').forEach(e => e.style.strokeDashoffset = e.dataset.off);
+    document.querySelectorAll('.bar i').forEach(e => e.style.width = e.dataset.w + '%');
+  }, 40));
+}
+
+/* ---------- формы ---------- */
+const carOpts = sel => DATA.cars.map(c => `<option${c['Машина'] === sel ? ' selected' : ''}>${esc(c['Машина'])}</option>`).join('');
+const iso = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+function sheet(html) { $('#sheet').innerHTML = '<div class="grab"></div>' + html; $('#sheet').classList.add('on'); $('#ov').classList.add('on'); }
+function close() { $('#sheet').classList.remove('on'); $('#ov').classList.remove('on'); }
+function toast(t) { const e = $('#toast'); e.textContent = t; e.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('on'), 2200); }
+function form(kind, car) {
+  car = car || state.car || state.toCar;
+  const common = `<label class="f">Машина<select name="car">${carOpts(car)}</select></label>`;
+  const f = {
+    mileage: ['Внести пробег', `${common}<label class="f">Пробег, км<input name="km" type="number" inputmode="numeric" required min="0"></label><label class="f">Дата<input name="date" type="date" value="${iso()}"></label><label class="f">Комментарий<input name="note"></label>`],
+    service: ['ТО / ремонт', `${common}<label class="f">Вид работ<select name="type"><option>Плановое ТО</option><option>Ремонт</option><option>Шиномонтаж</option><option>Другое</option></select></label>
+      <label class="f">Пробег, км<input name="km" type="number" inputmode="numeric" required></label><label class="f">Дата<input name="date" type="date" value="${iso()}"></label>
+      <label class="f">Что сделано / заменено<textarea name="what" rows="3"></textarea></label><label class="f">Сервис<input name="shop"></label><label class="f">Стоимость, ₽<input name="cost" type="number" inputmode="numeric"></label>`],
+    expense: ['Добавить расход', `${common}<label class="f">Статья<input name="item" required></label><label class="f">План, ₽<input name="plan" type="number" inputmode="numeric"></label><label class="f">Срок (ДД.ММ.ГГГГ или ММ.ГГГГ)<input name="due" placeholder="01.02.2027"></label><label class="f">Факт, ₽<input name="fact" type="number" inputmode="numeric"></label><label class="f">Комментарий<input name="note"></label>`]
+  }[kind];
+  sheet(`<h3>${f[0]}</h3><form id="frm" data-kind="${kind}">${f[1]}<div style="display:flex;gap:10px;margin-top:6px"><button type="button" class="btn sec" data-act="close" style="flex:1">Отмена</button><button class="btn" style="flex:2">Сохранить</button></div></form>`);
+}
+function submit(e) {
+  e.preventDefault(); const fd0 = Object.fromEntries(new FormData(e.target)), k = e.target.dataset.kind;
+  const num = x => x === '' || x == null ? null : +x; const ts = new Date().toISOString(), id = uid();
+  if (k === 'mileage') CH.mileage.push({car: fd0.car, km: num(fd0.km), date: fd0.date, note: fd0.note, id, ts});
+  if (k === 'service') { const c = model(DATA.cars.find(x => x['Машина'] === fd0.car)); const km0 = num(fd0.km);
+    CH.service.push({car: fd0.car, type: fd0.type, km: km0, date: fd0.date, what: fd0.what, shop: fd0.shop, cost: num(fd0.cost), next: fd0.type === 'Плановое ТО' ? km0 + c.interval : null, id, id, ts}); }
+  if (k === 'expense') CH.budget.push({car: fd0.car, item: fd0.item, plan: num(fd0.plan), due: fd0.due, fact: num(fd0.fact), status: 'План', note: fd0.note, id, ts});
+  save(); markDirty(); close(); render(); toast(srvOn() ? 'Записано, отправляю боту' : 'Записано. Нажмите «Сохранить в iCloud»');
+}
+function exportJSON() {
+  const n = CH.mileage.length + CH.service.length + CH.budget.length;
+  const blob = new Blob([JSON.stringify({app: 'garage', exported: new Date().toISOString(), base: DATA.built, changes: CH}, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `garage-changes-${iso()}.json`; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  sheet(`<h3>Экспорт изменений</h3><p class="muted">Файл с ${n} изменениями скачан. Отправьте его Механику, он внесёт записи в таблицу и пришлёт новую версию приложения.</p>
+  <div style="display:flex;gap:10px"><button class="btn sec" data-act="close" style="flex:1">Готово</button><button class="btn" data-act="clear" style="flex:1">Очистить локальные</button></div>`);
+}
+/* ---------- синхронизация через iCloud Drive ---------- */
+const LSY = 'garage.sync.v1', FNAME = 'garage-data.json';
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 10));
+const keyOf = x => x.id || x.ts || JSON.stringify(x);
+let SY = (() => { try { return JSON.parse(lsGet(LSY)) || {}; } catch (e) { return {}; } })();
+function saveSY() { lsSet(LSY, JSON.stringify(SY)); }
+function markDirty() { SY.dirty = true; saveSY(); srvSoon(); }
+/* ---- синхронизация с сервером бота ---- */
+const LSV = 'garage.gh.v1', SRV0 = {repo: 'makc178/garage-data'};
+let SRV = (() => { try { const o = JSON.parse(lsGet(LSV)); if (o && o.repo) return o; } catch (e) {} return {repo: SRV0.repo.includes('/') && !SRV0.repo.startsWith('__') ? SRV0.repo : 'makc178/garage-data', token: ''}; })();
+let NET = {state: 'idle', err: '', busy: false};
+const srvOn = () => !!(SRV.repo && SRV.token);
+const qn = () => CH.mileage.length + CH.service.length + CH.budget.length;
+const sentSet = () => new Set(SY.sent || []);
+const unsentN = () => { const s = sentSet(); return ['mileage', 'service', 'budget'].reduce((n, k) => n + CH[k].filter(x => !s.has(keyOf(x))).length, 0); };
+const b64 = t => btoa(String.fromCharCode(...new TextEncoder().encode(t)));
+const fid = i => String(i).replace(/[^A-Za-z0-9_-]/g, '_');
+// GitHub Contents API (приватный репозиторий с данными, токен только на этом устройстве)
+async function gh(path, opt = {}, raw) {
+  const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), 30000);
+  try { const r = await fetch(`https://api.github.com/repos/${SRV.repo}/contents/${path}` + (opt.method ? '' : (path.includes('?') ? '&' : '?') + '_=' + Date.now()),
+      Object.assign({cache: 'no-store', signal: ctl.signal}, opt, {headers: {Authorization: 'Bearer ' + SRV.token, Accept: raw ? 'application/vnd.github.raw+json' : 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'}}));
+    if (r.status === 401) throw new Error('ключ недействителен'); if (r.status === 403) throw new Error('нет прав или лимит запросов');
+    if (r.status === 404) return null; if (r.status === 422 && opt.method === 'PUT') return {exists: true};
+    if (!r.ok) throw new Error('GitHub ответил ' + r.status); return raw ? JSON.parse(await r.text()) : r.json(); }
+  finally { clearTimeout(tm); } }
+async function srvSync(manual) {
+  if (!srvOn() || NET.busy) return; if (navigator.onLine === false) { NET.state = 'off'; render(); return; }
+  NET.busy = true; NET.state = 'busy'; render();
+  try { const s = sentSet();
+    for (const k of ['mileage', 'service', 'budget']) for (const x of CH[k]) { const id = keyOf(x); if (s.has(id)) continue;
+      const body = JSON.stringify({kind: k, item: x}, null, 1);
+      await gh(`changes/${fid(id)}.json`, {method: 'PUT', body: JSON.stringify({message: `app: ${k} ${x.car || ''}`.trim(), content: b64(body)})});
+      s.add(id); SY.sent = [...s]; saveSY(); }
+    const sn = await gh('garage-data.json', {}, true);
+    if (sn && sn.app === 'garage' && sn.data && sn.data.cars && (!DATA || String(sn.data.built || '') >= String(DATA.built || ''))) { DATA = sn.data; lsSet(LSN, JSON.stringify(DATA)); }
+    const list = await gh('changes') || [];   // записи с других устройств, ещё не внесённые ботом
+    const have = new Set(['mileage', 'service', 'budget'].flatMap(k => CH[k].map(x => fid(keyOf(x)))));
+    const done = new Set((DATA && DATA.applied || []).map(fid));
+    for (const f of Array.isArray(list) ? list : []) { const n = f.name.replace(/\.json$/, ''); if (!f.name.endsWith('.json') || have.has(n) || done.has(n)) continue;
+      const o = await gh('changes/' + f.name, {}, true); if (o && CH[o.kind]) { CH[o.kind].push(o.item); s.add(keyOf(o.item)); } }
+    if (DATA) { const ap = new Set(DATA.applied || []); ['mileage', 'service', 'budget'].forEach(k => CH[k] = CH[k].filter(x => !ap.has(x.id))); }
+    const live = new Set(['mileage', 'service', 'budget'].flatMap(k => CH[k].map(keyOf))); SY.sent = [...s].filter(i => live.has(i)); save();
+    NET.state = 'ok'; NET.err = ''; SY.dirty = unsentN() > 0; SY.last = new Date().toISOString(); saveSY();
+    if (manual) toast(sn ? 'Синхронизировано' : 'Подключено, но данных в репозитории пока нет');
+  } catch (e) { NET.state = 'err'; NET.err = e.name === 'AbortError' ? 'нет ответа' : (e.message || 'нет связи'); if (manual) toast('Нет связи: ' + NET.err); }
+  finally { NET.busy = false; render(); } }
+function srvSoon() { clearTimeout(srvSoon.t); srvSoon.t = setTimeout(() => srvSync(), 300); }
+function srvSettings() {
+  sheet(`<h3>Синхронизация через GitHub</h3><p class="sub" style="margin:0 0 12px">Записи автоматически уходят в ваш приватный репозиторий, бот вносит их в базу; свежие данные подтягиваются: при открытии, при возврате в приложение и раз в минуту. Без связи записи копятся на устройстве и уйдут позже.</p>
+  <form id="srvf"><label class="f">Репозиторий с данными<input name="repo" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="makc178/garage-data" value="${esc(SRV.repo)}"></label>
+  <label class="f">Ключ GitHub (github_pat_…)<input name="token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(SRV.token)}"></label>
+  <div class="sub" style="margin:0 0 12px">Статус: ${esc(netText())}${NET.err ? ' — ' + esc(NET.err) : ''} · не отправлено: ${unsentN()} · ждут бота: ${qn() - unsentN()}</div>
+  <div style="display:flex;gap:10px"><button type="button" class="btn sec" data-act="close" style="flex:1">Закрыть</button><button class="btn" style="flex:2">Сохранить и проверить</button></div></form>`); }
+function netText() { return !srvOn() ? 'не настроен' : ({busy: 'синхронизация…', ok: 'синхр. ' + fdt(SY.last), err: 'ошибка', off: 'нет сети', idle: 'ожидание'})[NET.state]; }
+document.addEventListener('submit', e => { if (e.target.id !== 'srvf') return; e.preventDefault(); e.stopImmediatePropagation();
+  const f = new FormData(e.target); SRV = {repo: String(f.get('repo') || '').trim().replace(/^https:\/\/github\.com\//, '').replace(/\/+$/, ''), token: String(f.get('token') || '').trim()};
+  lsSet(LSV, JSON.stringify(SRV)); close(); srvSync(true); }, true);
+addEventListener('online', () => srvSync()); addEventListener('focus', () => srvSync());
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') srvSync(); });
+addEventListener('pageshow', e => { if (e.persisted) srvSync(); });
+setInterval(() => { if (document.visibilityState !== 'hidden') srvSync(); }, 60000);
+['mileage', 'service', 'budget'].forEach(k => (CH[k] = CH[k] || []).forEach(x => { if (!x.id) x.id = uid(); })); save();
+let FH = null; const FSA = 'showOpenFilePicker' in window;
+function idb(mode, fn) { return new Promise((res, rej) => { const o = indexedDB.open('garage', 1);
+  o.onupgradeneeded = () => o.result.createObjectStore('kv'); o.onerror = () => rej(o.error);
+  o.onsuccess = () => { const tx = o.result.transaction('kv', mode), r = fn(tx.objectStore('kv')); tx.oncomplete = () => res(r && r.result); tx.onerror = () => rej(tx.error); }; }); }
+const fhSet = h => idb('readwrite', s => s.put(h, 'fh')).catch(() => {});
+if (FSA && window.indexedDB) idb('readonly', s => s.get('fh')).then(h => { if (h) { FH = h; render(); } }).catch(() => {});
+function fdt(s) { if (!s) return 'никогда'; const d = new Date(s); return d.toLocaleString('ru-RU', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'}); }
+function syncBadge() { const n = CH.mileage.length + CH.service.length + CH.budget.length;
+  if (srvOn()) { const cls = NET.state === 'ok' && !unsentN() ? '' : NET.state === 'busy' || NET.state === 'idle' ? ' busy' : ' dirty';
+    return `<span class="sync${cls}" data-act="srv" title="Синхронизация с сервером — нажмите для настроек"><span class="dt"></span>${NET.state === 'ok' && unsentN() ? 'Не отправлено: ' + unsentN() : NET.state === 'ok' && n ? 'Ждут бота: ' + n : esc(netText())}</span>`; }
+  return SY.dirty ? `<span class="sync dirty" data-act="savecloud" title="Есть несохранённые изменения — нажмите, чтобы сохранить"><span class="dt"></span>Не сохранено</span>`
+    : `<span class="sync" data-act="srv" title="Синхронизация — нажмите для настройки"><span class="dt"></span>Синхр.: ${fdt(SY.last)}</span>`; }
+function payload() { return {app: 'garage', format: 1, saved: new Date().toISOString(), built: DATA.built, data: DATA, changes: CH}; }
+function mergeFile(o) {
+  if (!o || o.app !== 'garage') throw new Error('Это не файл Гаража');
+  if (o.data && o.data.cars && String(o.data.built || '') > String(DATA.built || '')) DATA = o.data;   // таблица в файле новее
+  const c = o.changes || {}; let add = 0;
+  ['mileage', 'service', 'budget'].forEach(k => (c[k] || []).forEach(x => { const kk = keyOf(x);
+    if (!CH[k].some(y => keyOf(y) === kk)) { CH[k].push(x); add++; } }));
+  // записи, которые бот уже внёс в таблицу, убираем из локальных
+  const done = new Set((DATA.applied || [])); ['mileage', 'service', 'budget'].forEach(k => CH[k] = CH[k].filter(x => !done.has(x.id)));
+  save(); return add;
+}
+async function openCloud() {
+  if (FSA) { try { const [h] = await showOpenFilePicker({types: [{description: 'Данные Гаража', accept: {'application/json': ['.json']}}], multiple: false});
+      const add = mergeFile(JSON.parse(await (await h.getFile()).text())); FH = h; fhSet(h);
+      SY.last = new Date().toISOString(); SY.file = h.name; saveSY(); render(); toast(`Открыто: +${add} записей. Файл запомнен`); return;
+    } catch (e) { if (e.name === 'AbortError') return; if (!(e instanceof TypeError || e.name === 'SecurityError')) return toast('Ошибка: ' + e.message); } }
+  $('#imp').click();
+}
+function importJSON(file) {
+  const r = new FileReader(); r.onload = () => { try { const add = mergeFile(JSON.parse(r.result));
+    SY.last = new Date().toISOString(); SY.file = file.name; saveSY(); render(); toast(`Загружено: +${add} записей`); } catch (e) { toast('Ошибка: ' + e.message); } }; r.readAsText(file);
+}
+async function saveCloud() {
+  const text = JSON.stringify(payload(), null, 1);
+  const done = how => { SY.dirty = false; SY.last = new Date().toISOString(); saveSY(); render(); toast(how); };
+  if (FH && FH.createWritable) { try {
+      if (FH.queryPermission && (await FH.queryPermission({mode: 'readwrite'})) !== 'granted' && (await FH.requestPermission({mode: 'readwrite'})) !== 'granted') throw new Error('нет доступа');
+      const w = await FH.createWritable(); await w.write(text); await w.close(); return done('Сохранено в ' + FH.name);
+    } catch (e) { toast('Не удалось записать напрямую: ' + e.message); } }
+  if (FSA && window.showSaveFilePicker) { try { const h = await showSaveFilePicker({suggestedName: FNAME, types: [{description: 'Данные Гаража', accept: {'application/json': ['.json']}}]});
+      const w = await h.createWritable(); await w.write(text); await w.close(); FH = h; fhSet(h); return done('Сохранено в ' + h.name);
+    } catch (e) { if (e.name === 'AbortError') return; } }
+  const file = new File([text], FNAME, {type: 'application/json'});
+  if (navigator.canShare && navigator.canShare({files: [file]})) { try { await navigator.share({files: [file], title: FNAME});
+      return done('Готово. Проверьте, что файл перезаписан в папке «Гараж»'); } catch (e) { if (e.name === 'AbortError') return; } }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = FNAME; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+  done('Файл скачан — замените им garage-data.json в iCloud/Гараж');
+}
+function help() {
+  sheet(`<h3>Как синхронизировать</h3>
+  <ol class="steps"><li>В iCloud Drive есть папка <b>«Гараж»</b> с файлами <b>garage.html</b> и <b>garage-data.json</b>.</li>
+  <li>Начиная работу, нажмите <b>«Открыть данные из iCloud»</b> и выберите <b>garage-data.json</b> — подтянутся записи с других устройств.</li>
+  <li>Внесите пробег, ТО или расход.</li>
+  <li>Нажмите <b>«Сохранить в iCloud»</b>.<br>• <b>Chrome / Edge на Mac</b> — файл перезапишется сам.<br>• <b>iPhone</b> — в меню «Поделиться» выберите «Сохранить в Файлы» → iCloud Drive → Гараж → «Заменить».<br>• <b>Safari на Mac</b> — файл скачается в «Загрузки», перетащите его в папку Гараж с заменой.</li>
+  <li>Чтобы записи попали в таблицу, пришлите <b>garage-data.json</b> Механику.</li></ol>
+  <div class="muted" style="margin-bottom:14px">Последняя синхронизация: ${fdt(SY.last)}${SY.file ? ' · ' + esc(SY.file) : ''}${FH ? ' · прямое сохранение включено' : ''}<br>Локальных записей: ${CH.mileage.length + CH.service.length + CH.budget.length}${SY.dirty ? ' · <span class="s-amb">есть несохранённые изменения</span>' : ''}</div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn sec" data-act="close" style="flex:1">Закрыть</button><button class="btn sec" data-act="srv" style="flex:1">Сервер</button><button class="btn sec" data-act="open" style="flex:1">Открыть</button><button class="btn" data-act="savecloud" style="flex:1">Сохранить</button></div>`);
+}
+function theme(next) {
+  let t = lsGet(LT) || 'dark';
+  if (next) { t = t === 'dark' ? 'light' : 'dark'; lsSet(LT, t); }
+  document.documentElement.dataset.theme = t;
+  document.querySelector('meta[name=theme-color]').content = t === 'dark' ? '#070b14' : '#eef1f6';
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-tab],[data-act],[data-open],[data-tocar]'); if (!t) return;
+  if (t.dataset.tab) return go(t.dataset.tab);
+  if (t.dataset.open) return go('cars', {car: t.dataset.open});
+  if (t.dataset.tocar) { state.toCar = t.dataset.tocar; return render(); }
+  const a = t.dataset.act;
+  if (['mileage', 'service', 'expense'].includes(a)) form(a, t.dataset.car);
+  else if (a === 'close') close();
+  else if (a === 'export') exportJSON();
+  else if (a === 'import' || a === 'open') { close(); openCloud(); }
+  else if (a === 'savecloud') { close(); saveCloud(); }
+  else if (a === 'help') help();
+  else if (a === 'srv') srvSettings();
+  else if (a === 'theme') theme(true);
+  else if (a === 'clear') { if (confirm('Удалить локальные изменения с этого устройства?')) { CH = {mileage: [], service: [], budget: []}; save(); markDirty(); close(); render(); } }
+});
+$('#ov').onclick = close;
+document.addEventListener('submit', submit);
+$('#imp').onchange = e => { const f = e.target.files[0]; if (f) importJSON(f); e.target.value = ''; };
+theme(); render(); srvSync();
+</script>
+</body>
+</html>
