@@ -345,7 +345,7 @@ const actions = car => `<div class="actions">
 function carCard(c) {
   const osago = insurance().find(p => p.car === c.name && p.type === 'ОСАГО'); const od = osago && osago.to ? days(osago.to) : null;
   return `<div class="glass card car" data-open="${esc(c.name)}" style="--cc:${ccol(c.name)}">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">${cimg(c)}<div style="flex:1;min-width:0"><div class="nm"><span class="dot" style="display:inline-block;color:${ccol(c.name)};margin-right:8px;vertical-align:middle"></span>${esc(c.name)}</div>${c.plate ? `<span class="plate">${esc(c.plate)}</span>` : ''}</div><span class="muted" style="color:var(--tx3)">${ic('chev')}</span></div>
+    <div class="cphw">${cphoto(c)}${c.plate ? `<span class="plate">${esc(c.plate)}</span>` : ''}</div><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div style="flex:1;min-width:0"><div class="nm"><span class="dot" style="display:inline-block;color:${ccol(c.name)};margin-right:8px;vertical-align:middle"></span>${esc(c.name)}</div></div><span class="muted" style="color:var(--tx3)">${ic('chev')}</span></div>
     ${fcBox(c, false)}
     <div class="rings">${ring(c.left, c.interval, stK(c.left), fmt(c.left), 'км до ТО')}
       ${od != null ? ring(od, 365, stD(od), od, 'дн. ОСАГО') : ''}
