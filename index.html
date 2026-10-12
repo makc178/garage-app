@@ -67,7 +67,7 @@ main{padding-left:calc(env(safe-area-inset-left) + 16px);padding-right:calc(env(
 @keyframes pl{50%{opacity:.35}}
 .sync.stale{color:var(--amber);border-color:rgba(245,165,36,.55);background:rgba(245,165,36,.12)}.sync.stale .dt{background:var(--amber);box-shadow:0 0 10px var(--amber)}
 .sync.bad{color:var(--red);border-color:rgba(255,93,93,.6);background:rgba(255,93,93,.13)}.sync.bad .dt{background:var(--red);box-shadow:0 0 10px var(--red);animation:pl 1.4s infinite}
-.cphw{position:relative;margin:-16px -16px 14px;aspect-ratio:16/9;overflow:hidden;border-bottom:3px solid var(--cc,var(--line))}.cph{display:block;width:100%;height:100%;object-fit:cover;background:var(--glass2)}.cphw .plate{position:absolute;left:12px;bottom:12px;margin:0;background:rgba(7,11,20,.72);color:#fff;border-color:rgba(255,255,255,.25);backdrop-filter:blur(6px)}
+.cphw{position:relative;margin:-16px -16px 14px;aspect-ratio:16/9;overflow:hidden;border-bottom:3px solid var(--cc,var(--line))}.cph{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 55%;background:var(--glass2);transform:scale(1.18);transform-origin:50% 60%}.cph.def,.cph.wide{transform:none}.cphw .plate{position:absolute;left:12px;bottom:12px;margin:0;background:rgba(7,11,20,.72);color:#fff;border-color:rgba(255,255,255,.25);backdrop-filter:blur(6px)}
 .cph.def{object-fit:contain;padding:18px}
 
 details.more summary{list-style:none;cursor:pointer;padding:13px 16px;color:var(--blue);font-weight:600;font-size:14px;border-top:1px solid var(--line)}
@@ -86,7 +86,7 @@ details.more summary::-webkit-details-marker{display:none}details.more[open] sum
 /* car card */
 .car{position:relative;overflow:hidden;cursor:pointer;transition:transform .25s}
 .car:active{transform:scale(.985)}
-.car::after{content:"";position:absolute;inset:auto -40px -60px auto;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(61,123,255,.25),transparent 70%);pointer-events:none}
+.car::after{display:none;content:"";position:absolute;inset:auto -40px -60px auto;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(61,123,255,.25),transparent 70%);pointer-events:none}
 .car .nm{font-size:20px;font-weight:700;letter-spacing:-.3px}
 .plate{display:inline-flex;align-items:center;gap:6px;margin-top:6px;font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:13px;font-weight:600;padding:3px 9px;border-radius:8px;border:1px solid var(--line);background:var(--glass2);letter-spacing:.5px}
 .rings{display:flex;gap:18px;margin-top:16px;align-items:center}
@@ -130,7 +130,7 @@ details[open] .chev{transform:rotate(90deg)}
 .cimg{width:76px;height:76px;border-radius:50%;flex:none;object-fit:cover;margin:-4px 0 0 -4px;box-shadow:0 6px 18px rgba(0,0,0,.25);border:2px solid var(--line);background:var(--glass)}
 .card:not(.car) .cimg{width:112px;height:112px}
 @media(max-width:360px){.cimg{width:60px;height:60px}.card:not(.car) .cimg{width:88px;height:88px}}
-.rings .kv{min-width:118px}.rings .kv dd{white-space:nowrap}
+.car .rings{flex-wrap:wrap}.car .rings .kv{flex:1 1 100%!important;min-width:0}.rings .kv{min-width:118px}.rings .kv dd{white-space:nowrap}
 @media(max-width:440px){.rings{flex-wrap:wrap}}
 .fc{margin-top:14px;padding:12px 14px;border-radius:16px;background:var(--glass2,rgba(127,127,127,.08));border:1px solid var(--line);display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:2px 12px}
 .fc .fl{color:var(--tx3);font-size:11.5px;font-weight:650;letter-spacing:.5px;text-transform:uppercase;grid-row:span 3}
@@ -163,7 +163,8 @@ label.f input:focus,label.f select:focus,label.f textarea:focus{border-color:var
 /* desktop */
 @media (min-width:900px){
   nav.bottom{display:none}
-  nav.side{display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh;width:240px;padding:28px 14px;border-right:1px solid var(--line);background:var(--glass);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+  nav.side{display:block;align-self:stretch;min-height:100vh;flex:none;width:240px;padding:0 14px;border-right:1px solid var(--line);background:var(--glass);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+  nav.side .sidein{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:4px;padding:28px 0}
   nav.side .logo{display:flex;align-items:center;gap:10px;font-weight:750;font-size:20px;padding:0 10px 22px}
   nav.side .logo img{width:34px;height:34px;border-radius:10px}
   nav.side a{flex-direction:row;gap:12px;font-size:15px;padding:11px 14px;color:var(--tx2)}
@@ -208,6 +209,7 @@ const emptyDB = () => ({cars: [], mileage: [], service: [], budget: [], insuranc
 const LSN = OWN ? 'garage.own.snapshot.v1' : 'garage.snapshot.v1';
 const DEFCAR = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><defs><clipPath id="c"><circle cx="100" cy="100" r="100"/></clipPath></defs><g clip-path="url(#c)"><rect width="200" height="200" fill="#e4e8ee"/><g fill="none" stroke="#c3cad5" stroke-width="2"><path d="M-10 40q60-25 110 0t120-5"/><path d="M-10 70q55-20 105 5t115-10"/><path d="M-10 160q60 20 110-5t120 10"/><path d="M-10 185q55 15 110-8t120 8"/></g><path d="M28 128h144v-14l-10-6-26-6-20-18H70l-20 20-16 4-6 6z" fill="#5d6b80"/><path d="M78 88h38l16 16H64z" fill="#aeb9c9"/><circle cx="62" cy="130" r="15" fill="#2c3442"/><circle cx="62" cy="130" r="6" fill="#aeb9c9"/><circle cx="140" cy="130" r="15" fill="#2c3442"/><circle cx="140" cy="130" r="6" fill="#aeb9c9"/></g></svg>');
 const CARIMG = {"ford-bronco": "cars/ford-bronco.webp", "land-rover-defender": "cars/land-rover-defender.webp", "range-rover-sport": "cars/range-rover-sport.webp"};
+const carKey = n => ({'Land Rover Defender': 'land-rover-defender', 'Range Rover Sport': 'range-rover-sport', 'Ford Bronco': 'ford-bronco'}[n] || String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, '-'));
 const carImg = n => CARIMG[{'Land Rover Defender': 'land-rover-defender', 'Range Rover Sport': 'range-rover-sport', 'Ford Bronco': 'ford-bronco'}[n] || String(n || '').toLowerCase().replace(/[^a-z0-9]+/g, '-')];
 if (OWN) DATA = null;
 if (!DATA) { try { DATA = JSON.parse(localStorage.getItem(LSN)); } catch (e) {} }
@@ -230,7 +232,7 @@ const dlabel = n => n < 0 ? 'просрочено' : n === 0 ? 'сегодня' 
 const stD = n => n <= 30 ? 'red' : n <= 90 ? 'amb' : 'grn';
 const stK = n => n <= 1000 ? 'red' : n <= 3000 ? 'amb' : 'grn';
 const COL = {red:'var(--red)', amb:'var(--amber)', grn:'var(--green)'};
-const CC = {'Land Rover Defender':'#6F8F78','Range Rover Sport':'#7C8DB5','Ford Bronco':'#B39062'};
+const CC = {'Land Rover Defender':'#22C55E','Range Rover Sport':'#60A5FA','Ford Bronco':'#F59E0B'};
 const ccol = n => CC[n] || '#8A94A6';
 const short = n => ({'Land Rover Defender':'Defender','Range Rover Sport':'Range Rover Sport','Ford Bronco':'Bronco'}[n] || n);
 
@@ -317,8 +319,8 @@ let state = {tab: 'sum', car: null, toCar: DATA && DATA.cars[0] ? DATA.cars[0]['
 function nav() {
   const a = TABS.map(([k, t, i]) => `<a data-tab="${k}" class="${state.tab === k ? 'on' : ''}">${ic(i)}<span>${t}</span></a>`).join('');
   $('#bottom').innerHTML = a;
-  $('#side').innerHTML = `<div class="logo"><img src="${$('link[rel=apple-touch-icon]').href}" alt="">Гараж</div>${a}
-    <div style="flex:1"></div><a data-act="settings">${ic('gear')}<span>Настройки</span></a><a data-act="theme">${ic('moon')}<span>Тема</span></a>`;
+  $('#side').innerHTML = `<div class="sidein"><div class="logo"><img src="${$('link[rel=apple-touch-icon]').href}" alt="">Гараж</div>${a}
+    <div style="flex:1"></div><a data-act="settings">${ic('gear')}<span>Настройки</span></a><a data-act="theme">${ic('moon')}<span>Тема</span></a></div>`;
 }
 function go(tab, extra) { Object.assign(state, {tab, car: null}, extra || {}); render(); window.scrollTo({top: 0, behavior: 'smooth'}); }
 function ring(val, max, st, big, small) {
@@ -347,26 +349,27 @@ function carCard(c) {
 }
 function cphoto(c) { const p = c.raw['Фото машины'];
   if (p) return `<img class="cph" data-ci="${esc(p)}" src="${DEFCAR}" alt="">`;
-  const u = carImg(c.name); return u ? `<img class="cph" src="${u}" alt="${esc(c.name)}" loading="lazy" decoding="async">` : `<img class="cph def" src="${DEFCAR}" alt="">`; }
+  const w = CARIMG[(carKey(c.name)) + '-wide'], u = w || carImg(c.name); return u ? `<img class="cph${w ? ' wide' : ''}" src="${u}" alt="${esc(c.name)}" loading="lazy" decoding="async">` : `<img class="cph def" src="${DEFCAR}" alt="">`; }
 function cimg(c) { const p = c.raw['Фото машины'];
   if (p) return `<img class="cimg" data-ci="${esc(p)}" src="${DEFCAR}" alt="">`;
   const u = carImg(c.name); return u ? `<img class="cimg" src="${u}" alt="" loading="lazy" decoding="async">` : OWN ? `<img class="cimg" src="${DEFCAR}" alt="">` : ''; }
 function evRow(e) { const st = stD(e.d);
   return `<div class="ev"><span class="dot s-${st}"></span><div class="t"><b>${esc(e.t)}</b><span>${e.s}</span></div><span class="badge b-${st}">${e.d < 0 ? 'просрочено ' + (-e.d) + ' дн.' : dlabel(e.d)}</span></div>`; }
 function spent() { const y = String(new Date().getFullYear()), by = {};
+  if (DATA.costs && DATA.costs.length) { DATA.costs.forEach(x => { if (x.status === 'fact') { const n = fullCar(x.car); by[n] = (by[n] || 0) + (+(x.spent ?? x.amount) || 0); } }); return by; }
   budget().forEach(b => { if (+b.fact) by[b.car] = (by[b.car] || 0) + +b.fact; });
   cars().forEach(c => c.svc.forEach(x => { if (+x.cost && String(x.date || '').slice(0, 4) === y) by[c.name] = (by[c.name] || 0) + +x.cost; }));
   return by; }
 const fullCar = n => ({'Defender': 'Land Rover Defender', 'Bronco': 'Ford Bronco', 'RRS': 'Range Rover Sport'}[n] || n);
 function planBy() { const pl = {};
-  if (DATA.costs && DATA.costs.length) DATA.costs.forEach(x => { const n = fullCar(x.car); pl[n] = (pl[n] || 0) + (+x.amount || 0); });
+  if (DATA.costs && DATA.costs.length) DATA.costs.forEach(x => { if (x.status === 'fact') return; const n = fullCar(x.car); pl[n] = (pl[n] || 0) + (+x.amount || 0); });
   else budget().forEach(x => pl[x.car] = (pl[x.car] || 0) + (+x.plan || 0));
   return pl; }
 function budChart() { const pl = planBy(), sp = spent();
   const names = [...new Set([...DATA.cars.map(c => c['Машина']), ...Object.keys(pl), ...Object.keys(sp)])].filter(n => pl[n] || sp[n]);
   const mx = Math.max(1, ...names.map(n => Math.max(pl[n] || 0, sp[n] || 0)));
-  return `<div class="bch">${names.map(n => `<span>${esc(short(n))}</span><div class="bars"><i style="width:${(pl[n] || 0) / mx * 100}%;background:${ccol(n)}"></i><i style="width:${(sp[n] || 0) / mx * 100}%;background:${ccol(n)};opacity:.45"></i></div><div class="r">${rub(pl[n] || 0)}<small>потрачено ${rub(sp[n] || 0)}</small></div>`).join('')}</div>
-  <div class="lg"><span><i style="background:var(--tx2)"></i>план${DATA.costs && DATA.costs.length ? ' (Финансист)' : ''}</span><span><i style="background:var(--tx2);opacity:.45"></i>потрачено за ${new Date().getFullYear()} г. (журнал ТО + факт бюджета)</span></div>`; }
+  return `<div class="bch">${names.map(n => `<span>${esc(short(n))}</span><div class="bars"><i style="width:${(pl[n] || 0) / mx * 100}%;background:${ccol(n)};opacity:.3"></i><i style="width:${(sp[n] || 0) / mx * 100}%;background:${ccol(n)}"></i></div><div class="r">${rub(pl[n] || 0)}<small>потрачено ${rub(sp[n] || 0)}</small></div>`).join('')}</div>
+  <div class="lg"><span><i style="background:var(--tx2);opacity:.3"></i>план${DATA.costs && DATA.costs.length ? ' (Финансист)' : ''}</span><span><i style="background:var(--tx2)"></i>потрачено${DATA.costs && DATA.costs.length ? ' (факт, Финансист)' : ' за ' + new Date().getFullYear() + ' г. (журнал ТО + факт бюджета)'}</span></div>`; }
 function vSum() {
   const {ev, to} = events(); const n = CH.mileage.length + CH.service.length + CH.budget.length;
   const total = Object.values(planBy()).reduce((a, x) => a + x, 0), sp = Object.values(spent()).reduce((a, x) => a + x, 0);
@@ -378,7 +381,7 @@ function vSum() {
   <div><h2>До ТО</h2><div class="glass">${to.map(e => { const st = stK(e.k), c = cars().find(x => 'ТО ' + short(x.name) === e.t);
     return `<div class="ev" style="flex-wrap:wrap"><span class="dot s-${st}"></span><div class="t"><b>${esc(e.t)}</b><span>${e.s}</span></div><span class="badge b-${st}">${fmt(e.k)} км</span>
     <div class="bar" style="flex-basis:100%"><i data-w="${Math.max(3, 100 - e.k / c.interval * 100)}" style="background:${COL[st]}"></i></div></div>`; }).join('')}</div>
-  <h2>Бюджет</h2><div class="glass card" data-tab="bud" style="cursor:pointer"><div style="display:flex;gap:24px;flex-wrap:wrap"><div><div class="muted">План</div><div class="big">${rub(total)}</div></div><div><div class="muted">Потрачено</div><div class="big s-amb">${rub(sp)}</div></div></div>${budChart()}<div class="muted" style="margin-top:10px">${(DATA.costs && DATA.costs.length) || budget().length} статей · откройте «Бюджет»</div></div></div></div>`;
+  <h2>Бюджет</h2><div class="glass card" data-tab="bud" style="cursor:pointer"><div style="display:flex;gap:24px;flex-wrap:wrap"><div><div class="muted">План</div><div class="big">${rub(total)}</div></div><div><div class="muted">Потрачено</div><div class="big s-amb">${rub(sp)}</div></div></div>${budChart()}<div class="muted" style="margin-top:10px">${(DATA.costs && DATA.costs.filter(x => x.status !== 'fact').length) || budget().length} статей · откройте «Бюджет»</div></div></div></div>`;
 }
 function vCars() {
   if (state.car) return vCar(cars().find(c => c.name === state.car));
