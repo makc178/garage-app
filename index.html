@@ -34,7 +34,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .app{display:flex;min-height:100vh}
 nav.side{display:none}
-main{flex:1;min-width:0;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 96px);max-width:1180px;margin:0 auto;width:100%}
+main{flex:1;min-width:0;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 186px);max-width:1180px;margin:0 auto;width:100%}
 header.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 2px 18px}
 h1{font-size:32px;font-weight:750;letter-spacing:-.6px;margin:0}
 .sub{color:var(--tx2);font-size:13px;margin-top:2px}
@@ -65,6 +65,9 @@ main{padding-left:calc(env(safe-area-inset-left) + 16px);padding-right:calc(env(
 @media(max-width:440px){header.top{flex-wrap:nowrap;gap:6px;margin:0 0 12px}header.top h1{font-size:22px}header.top .sub{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}header.top .hbtns{gap:6px}header.top .iconbtn{width:34px;height:34px;border-radius:11px}header.top .iconbtn svg.i{width:18px;height:18px}header.top .sync{padding:6px 8px;font-size:11px;gap:5px}header.top .iconbtn{width:32px;height:32px}}
 @media(max-width:360px){header.top .hbtns{gap:4px}header.top .iconbtn{width:30px;height:30px}header.top h1{font-size:19px}}
 @keyframes pl{50%{opacity:.35}}
+.dd{position:fixed;z-index:52;width:300px;max-width:calc(100vw - 16px);background:#151B2B;border:1px solid rgba(255,255,255,.1);border-radius:16px;box-shadow:0 12px 32px rgba(0,0,0,.5);padding:6px 14px;display:none}.dd.on{display:block}
+html[data-theme=light] .dd{background:#fff}
+.ov.dim{background:rgba(0,0,0,.4)}
 .sync.stale{color:var(--amber);border-color:rgba(245,165,36,.55);background:rgba(245,165,36,.12)}.sync.stale .dt{background:var(--amber);box-shadow:0 0 10px var(--amber)}
 .sync.bad{color:var(--red);border-color:rgba(255,93,93,.6);background:rgba(255,93,93,.13)}.sync.bad .dt{background:var(--red);box-shadow:0 0 10px var(--red);animation:pl 1.4s infinite}
 .cphw{position:relative;margin:-16px -16px 14px;aspect-ratio:16/9;overflow:hidden;border-bottom:3px solid var(--cc,var(--line))}.cph{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 55%;background:var(--glass2);transform:scale(1.18);transform-origin:50% 60%}.cph.def,.cph.wide{transform:none}.cphw .plate{position:absolute;left:12px;bottom:12px;margin:0;background:rgba(7,11,20,.72);color:#fff;border-color:rgba(255,255,255,.25);backdrop-filter:blur(6px)}
@@ -184,6 +187,7 @@ label.f input:focus,label.f select:focus,label.f textarea:focus{border-color:var
 <nav class="bottom glass" id="bottom"></nav>
 <div class="ov" id="ov"></div>
 <div class="sheet" id="sheet"></div>
+<div class="dd" id="dd"></div>
 <div class="toast glass" id="toast"></div>
 <input type="file" id="imp" accept=".json,application/json,text/plain" hidden>
 <script>
@@ -519,7 +523,7 @@ function render() {
 const carOpts = sel => DATA.cars.map(c => `<option${c['Машина'] === sel ? ' selected' : ''}>${esc(c['Машина'])}</option>`).join('');
 const iso = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 function sheet(html) { $('#sheet').innerHTML = '<div class="grab"></div>' + html; $('#sheet').classList.add('on'); $('#ov').classList.add('on'); }
-function close() { $('#sheet').classList.remove('on'); $('#ov').classList.remove('on'); }
+function close() { $('#sheet').classList.remove('on'); $('#ov').classList.remove('on'); ddClose(); }
 function toast(t) { const e = $('#toast'); e.textContent = t; e.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => e.classList.remove('on'), 2200); }
 function form(kind, car) {
   car = car || state.car || state.toCar;
@@ -844,13 +848,20 @@ function syncBadge() { const n = CH.mileage.length + CH.service.length + CH.budg
     return `<span class="sync${cls}" data-act="srv" title="Синхронизация с GitHub: ${esc(fdt(SY.last))} — нажмите для настроек"><span class="dt"></span>${esc(txt)}</span>`; }
   return SY.dirty ? `<span class="sync dirty" data-act="savecloud" title="Есть несохранённые изменения — нажмите, чтобы сохранить"><span class="dt"></span>Не сохранено</span>`
     : `<span class="sync${ageCls || (SY.last ? '' : ' bad')}" data-act="srv" title="Синхронизация — нажмите для настройки"><span class="dt"></span>${SY.last ? rel(SY.last) : 'Синхр.: никогда'}</span>`; }
-function settings() { sheet(`<h3>Настройки</h3><div class="setl">
+let DDA = null;
+function settings(anchor) { if (anchor) DDA = anchor; const d = $('#dd');
+  d.innerHTML = `<div class="setl">
   <a data-act="srv">${ic('cloud')}<span>Синхронизация GitHub<small>${srvOn() ? 'подключено · ' + esc(rel(SY.last)) : 'не подключено'}</small></span></a>
   <a data-act="open">${ic('up')}<span>Открыть данные из iCloud</span></a>
   <a data-act="savecloud">${ic('cloud')}<span>Сохранить в iCloud</span></a>
   <a data-act="help">${ic('help')}<span>Как синхронизировать</span></a>
-  <a data-act="theme">${ic('moon')}<span>Тема (тёмная / светлая)</span></a></div>
-  <button class="btn sec" data-act="close" style="width:100%;margin-top:12px">Закрыть</button>`); }
+  <a data-act="theme">${ic('moon')}<span>Тема (тёмная / светлая)</span></a></div>`;
+  d.classList.add('on'); $('#ov').classList.add('on', 'dim');
+  const r = (DDA && DDA.isConnected ? DDA : document.querySelector('[data-act=settings]')).getBoundingClientRect(), w = d.offsetWidth, h = d.offsetHeight;
+  let left = r.right - w; if (r.left < innerWidth / 2 && r.right - w < 8) left = r.left; left = Math.max(8, Math.min(left, innerWidth - w - 8));
+  let top = r.bottom + 8; if (top + h > innerHeight - 8) top = Math.max(8, r.top - h - 8);
+  d.style.left = left + 'px'; d.style.top = top + 'px'; }
+function ddClose() { $('#dd').classList.remove('on'); $('#ov').classList.remove('dim'); }
 setInterval(() => document.querySelectorAll('.sync').forEach(e => { if (!e.closest('.sheet')) e.outerHTML = syncBadge(); }), 30000);
 function payload() { return {app: 'garage', format: 1, saved: new Date().toISOString(), built: DATA.built, data: DATA, changes: CH}; }
 function mergeFile(o) {
@@ -913,7 +924,7 @@ document.addEventListener('click', e => {
   if (t.dataset.open) return go('cars', {car: t.dataset.open});
   if (t.dataset.ph) { const u = phURL[t.dataset.ph]; if (u) sheet(`<div class="viewer"><img src="${u}" alt="Фото заказ-наряда"></div><div style="margin-top:12px"><button class="btn sec" data-act="close" style="width:100%">Закрыть</button></div>`); return; }
   if (t.dataset.tocar) { state.toCar = t.dataset.tocar; return render(); }
-  const a = t.dataset.act;
+  const a = t.dataset.act; if (a !== 'settings' && a !== 'theme' && t.closest('#dd')) ddClose();
   if (['mileage', 'service', 'expense'].includes(a)) form(a, t.dataset.car);
   else if (a === 'close') close();
   else if (a === 'export') exportJSON();
@@ -921,11 +932,11 @@ document.addEventListener('click', e => {
   else if (a === 'savecloud') { close(); saveCloud(); }
   else if (a === 'help') help();
   else if (a === 'srv') srvSettings();
-  else if (a === 'settings') settings();
+  else if (a === 'settings') settings(t);
   else if (a === 'disc') { if (confirm('Удалить ключ GitHub с этого устройства?')) { VAULT.get('shared:token').then(t => { if (t === SRV.token) VAULT.set('shared:token', null); SRV = {repo: SRV.repo, token: ''}; lsSet(LSV, JSON.stringify(SRV)); VAULT.set('garage:gh', SRV); render(); }); close(); render(); toast('Ключ удалён'); } }
   else if (a === 'addphoto') pickPhotos({car: t.dataset.car, date: t.dataset.date || null, km: t.dataset.km === '' ? null : +t.dataset.km});
   else if (a === 'wo') woForm(t.dataset.car);
-  else if (a === 'theme') { theme(true); if ($('#sheet').classList.contains('on') && $('#sheet h3') && $('#sheet h3').textContent === 'Настройки') settings(); }
+  else if (a === 'theme') { theme(true); if ($('#dd').classList.contains('on')) settings(); }
   else if (a === 'caradd') carForm(null);
   else if (a === 'sts') stsForm();
   else if (a === 'caredit') carForm(t.dataset.car);
