@@ -17,7 +17,7 @@
 :root{
   --bg:#070b14;--bg2:#0d1526;--glass:rgba(255,255,255,.055);--glass2:rgba(255,255,255,.09);
   --line:rgba(255,255,255,.09);--tx:#eef2f8;--tx2:#9aa6bb;--tx3:#667189;
-  --blue:#3d7bff;--blue2:#1e4fd8;--amber:#f5a524;--red:#ff5d5d;--green:#34c77b;
+  --blue:#3d7bff;--blue2:#1e4fd8;--amber:#F59E0B;--red:#EF4444;--green:#22C55E;
   --sh:0 10px 40px rgba(0,0,0,.45);--r:22px;
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;
 }
@@ -62,14 +62,26 @@ header.top>div:first-child{min-width:0;flex:1 1 auto}
 header.top h1{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 header.top .hbtns{display:flex;gap:8px;align-items:center;flex:0 0 auto}
 main{padding-left:calc(env(safe-area-inset-left) + 16px);padding-right:calc(env(safe-area-inset-right) + 16px)}
-@media(max-width:440px){header.top{flex-wrap:wrap;gap:8px}header.top h1{font-size:26px}header.top .hbtns{gap:6px}header.top .iconbtn{width:34px;height:34px;border-radius:11px}header.top .iconbtn svg.i{width:18px;height:18px}header.top .sync{padding:6px 9px;font-size:11.5px}}
-@media(max-width:360px){header.top .hbtns{width:100%;justify-content:flex-end}header.top .iconbtn{width:32px;height:32px}}
+@media(max-width:440px){header.top{flex-wrap:nowrap;gap:6px;margin:0 0 12px}header.top h1{font-size:22px}header.top .sub{font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}header.top .hbtns{gap:6px}header.top .iconbtn{width:34px;height:34px;border-radius:11px}header.top .iconbtn svg.i{width:18px;height:18px}header.top .sync{padding:6px 8px;font-size:11px;gap:5px}header.top .iconbtn{width:32px;height:32px}}
+@media(max-width:360px){header.top .hbtns{gap:4px}header.top .iconbtn{width:30px;height:30px}header.top h1{font-size:19px}}
 @keyframes pl{50%{opacity:.35}}
+.sync.stale{color:var(--amber);border-color:rgba(245,165,36,.55);background:rgba(245,165,36,.12)}.sync.stale .dt{background:var(--amber);box-shadow:0 0 10px var(--amber)}
+.sync.bad{color:var(--red);border-color:rgba(255,93,93,.6);background:rgba(255,93,93,.13)}.sync.bad .dt{background:var(--red);box-shadow:0 0 10px var(--red);animation:pl 1.4s infinite}
+.cphw{position:relative;margin:-16px -16px 14px;aspect-ratio:16/9;overflow:hidden;border-bottom:3px solid var(--cc,var(--line))}.cph{display:block;width:100%;height:100%;object-fit:cover;background:var(--glass2)}.cphw .plate{position:absolute;left:12px;bottom:12px;margin:0;background:rgba(7,11,20,.72);color:#fff;border-color:rgba(255,255,255,.25);backdrop-filter:blur(6px)}
+.cph.def{object-fit:contain;padding:18px}
+
+details.more summary{list-style:none;cursor:pointer;padding:13px 16px;color:var(--blue);font-weight:600;font-size:14px;border-top:1px solid var(--line)}
+details.more summary::-webkit-details-marker{display:none}details.more[open] summary .sh{display:none}details.more:not([open]) summary .hd{display:none}
+.bch{display:grid;grid-template-columns:auto 1fr auto;gap:6px 10px;align-items:center;font-size:13px;margin-top:12px}
+.bch .bars{display:flex;flex-direction:column;gap:3px}.bch .bars i{display:block;height:7px;border-radius:5px;min-width:2px}
+.bch .r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}.bch .r small{display:block;color:var(--tx2);font-size:11.5px}
+.lg{display:flex;gap:14px;font-size:12px;color:var(--tx2);margin-top:10px}.lg i{display:inline-block;width:10px;height:7px;border-radius:3px;margin-right:5px;vertical-align:middle}
+.setl a{display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid var(--line);cursor:pointer;font-weight:600}.setl a:last-child{border-bottom:0}.setl small{display:block;color:var(--tx2);font-weight:500;font-size:12px}
 @supports(-webkit-touch-callout:none){body{background-attachment:scroll}}
 .steps{margin:0 0 14px;padding-left:20px;color:var(--tx2);line-height:1.5}.steps b{color:var(--tx)}
 .badge{font-weight:700;font-size:13px;padding:6px 10px;border-radius:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .s-red{color:var(--red)}.s-amb{color:var(--amber)}.s-grn{color:var(--green)}
-.b-red{background:rgba(255,93,93,.14);color:var(--red)}.b-amb{background:rgba(245,165,36,.15);color:var(--amber)}.b-grn{background:rgba(52,199,123,.13);color:var(--green)}
+.b-red{background:rgba(239,68,68,.16);color:var(--red)}.b-amb{background:rgba(245,165,36,.15);color:var(--amber)}.b-grn{background:rgba(52,199,123,.13);color:var(--green)}
 .dot{width:10px;height:10px;border-radius:50%;flex:none;box-shadow:0 0 12px currentColor;background:currentColor}
 /* car card */
 .car{position:relative;overflow:hidden;cursor:pointer;transition:transform .25s}
@@ -218,6 +230,8 @@ const dlabel = n => n < 0 ? 'просрочено' : n === 0 ? 'сегодня' 
 const stD = n => n <= 30 ? 'red' : n <= 90 ? 'amb' : 'grn';
 const stK = n => n <= 1000 ? 'red' : n <= 3000 ? 'amb' : 'grn';
 const COL = {red:'var(--red)', amb:'var(--amber)', grn:'var(--green)'};
+const CC = {'Land Rover Defender':'#6F8F78','Range Rover Sport':'#7C8DB5','Ford Bronco':'#B39062'};
+const ccol = n => CC[n] || '#8A94A6';
 const short = n => ({'Land Rover Defender':'Defender','Range Rover Sport':'Range Rover Sport','Ford Bronco':'Bronco'}[n] || n);
 
 const I = {
@@ -233,6 +247,7 @@ const I = {
   down:'<path d="M12 4v12M6 11l6 6 6-6M5 20h14"/>', up:'<path d="M12 20V8M6 13l6-6 6 6M5 4h14"/>',
   moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>', chev:'<path d="M9 6l6 6-6 6"/>', left:'<path d="M15 6l-6 6 6 6"/>',
   cloud:'<path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19.5 10 4 4 0 0 1 18 18z"/>', help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
   doc:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>'
 };
 const ic = (n, s) => `<svg class="i" viewBox="0 0 24 24"${s ? ` style="width:${s}px;height:${s}px"` : ''}>${I[n]}</svg>`;
@@ -303,7 +318,7 @@ function nav() {
   const a = TABS.map(([k, t, i]) => `<a data-tab="${k}" class="${state.tab === k ? 'on' : ''}">${ic(i)}<span>${t}</span></a>`).join('');
   $('#bottom').innerHTML = a;
   $('#side').innerHTML = `<div class="logo"><img src="${$('link[rel=apple-touch-icon]').href}" alt="">Гараж</div>${a}
-    <div style="flex:1"></div><a data-act="open">${ic('up')}<span>Открыть данные из iCloud</span></a><a data-act="savecloud">${ic('cloud')}<span>Сохранить в iCloud</span></a><a data-act="srv">${ic('cloud')}<span>Синхронизация GitHub</span></a><a data-act="help">${ic('help')}<span>Как синхронизировать</span></a><a data-act="theme">${ic('moon')}<span>Тема</span></a>`;
+    <div style="flex:1"></div><a data-act="settings">${ic('gear')}<span>Настройки</span></a><a data-act="theme">${ic('moon')}<span>Тема</span></a>`;
 }
 function go(tab, extra) { Object.assign(state, {tab, car: null}, extra || {}); render(); window.scrollTo({top: 0, behavior: 'smooth'}); }
 function ring(val, max, st, big, small) {
@@ -314,7 +329,7 @@ function ring(val, max, st, big, small) {
 }
 function head(title, sub) {
   return `<header class="top"><div><h1>${title}</h1>${sub ? `<div class="sub">${sub}</div>` : ''}</div>
-  <div class="hbtns">${syncBadge()}<button class="iconbtn" data-act="open" title="Открыть данные из iCloud">${ic('up', 20)}</button><button class="iconbtn" data-act="savecloud" title="Сохранить в iCloud">${ic('cloud', 20)}</button><button class="iconbtn" data-act="help" title="Как синхронизировать">${ic('help', 20)}</button><button class="iconbtn" data-act="theme" title="Тема">${ic('moon', 20)}</button></div></header>`;
+  <div class="hbtns">${syncBadge()}<button class="iconbtn" data-act="open" title="Открыть данные из iCloud">${ic('up', 20)}</button><button class="iconbtn" data-act="savecloud" title="Сохранить в iCloud">${ic('cloud', 20)}</button><button class="iconbtn" data-act="theme" title="Тема">${ic('moon', 20)}</button><button class="iconbtn" data-act="settings" title="Настройки">${ic('gear', 20)}</button></div></header>`;
 }
 const actions = car => `<div class="actions">
   <div class="act glass" data-act="mileage" data-car="${esc(car || '')}"><div class="ic">${ic('gauge')}</div>Внести пробег</div>
@@ -323,27 +338,47 @@ const actions = car => `<div class="actions">
   <div class="act glass am" data-act="expense" data-car="${esc(car || '')}"><div class="ic">${ic('ruble')}</div>Добавить расход</div></div>`;
 function carCard(c) {
   const osago = insurance().find(p => p.car === c.name && p.type === 'ОСАГО'); const od = osago && osago.to ? days(osago.to) : null;
-  return `<div class="glass card car" data-open="${esc(c.name)}">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">${cimg(c)}<div style="flex:1;min-width:0"><div class="nm">${esc(c.name)}</div>${c.plate ? `<span class="plate">${esc(c.plate)}</span>` : ''}</div><span class="muted" style="color:var(--tx3)">${ic('chev')}</span></div>
+  return `<div class="glass card car" data-open="${esc(c.name)}" style="--cc:${ccol(c.name)}">
+    <div class="cphw">${cphoto(c)}${c.plate ? `<span class="plate">${esc(c.plate)}</span>` : ''}</div><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div style="flex:1;min-width:0"><div class="nm"><span class="dot" style="display:inline-block;color:${ccol(c.name)};margin-right:8px;vertical-align:middle"></span>${esc(c.name)}</div></div><span class="muted" style="color:var(--tx3)">${ic('chev')}</span></div>
     ${fcBox(c, false)}
     <div class="rings">${ring(c.left, c.interval, stK(c.left), fmt(c.left), 'км до ТО')}
       ${od != null ? ring(od, 365, stD(od), od, 'дн. ОСАГО') : ''}
       <dl class="kv" style="flex:1;margin:0"><dt>Пробег</dt><dd>${km(c.cur)}</dd><dt>След. ТО</dt><dd>${km(c.next)}</dd></dl></div></div>`;
 }
+function cphoto(c) { const p = c.raw['Фото машины'];
+  if (p) return `<img class="cph" data-ci="${esc(p)}" src="${DEFCAR}" alt="">`;
+  const u = carImg(c.name); return u ? `<img class="cph" src="${u}" alt="${esc(c.name)}" loading="lazy" decoding="async">` : `<img class="cph def" src="${DEFCAR}" alt="">`; }
 function cimg(c) { const p = c.raw['Фото машины'];
   if (p) return `<img class="cimg" data-ci="${esc(p)}" src="${DEFCAR}" alt="">`;
   const u = carImg(c.name); return u ? `<img class="cimg" src="${u}" alt="" loading="lazy" decoding="async">` : OWN ? `<img class="cimg" src="${DEFCAR}" alt="">` : ''; }
+function evRow(e) { const st = stD(e.d);
+  return `<div class="ev"><span class="dot s-${st}"></span><div class="t"><b>${esc(e.t)}</b><span>${e.s}</span></div><span class="badge b-${st}">${e.d < 0 ? 'просрочено ' + (-e.d) + ' дн.' : dlabel(e.d)}</span></div>`; }
+function spent() { const y = String(new Date().getFullYear()), by = {};
+  budget().forEach(b => { if (+b.fact) by[b.car] = (by[b.car] || 0) + +b.fact; });
+  cars().forEach(c => c.svc.forEach(x => { if (+x.cost && String(x.date || '').slice(0, 4) === y) by[c.name] = (by[c.name] || 0) + +x.cost; }));
+  return by; }
+const fullCar = n => ({'Defender': 'Land Rover Defender', 'Bronco': 'Ford Bronco', 'RRS': 'Range Rover Sport'}[n] || n);
+function planBy() { const pl = {};
+  if (DATA.costs && DATA.costs.length) DATA.costs.forEach(x => { const n = fullCar(x.car); pl[n] = (pl[n] || 0) + (+x.amount || 0); });
+  else budget().forEach(x => pl[x.car] = (pl[x.car] || 0) + (+x.plan || 0));
+  return pl; }
+function budChart() { const pl = planBy(), sp = spent();
+  const names = [...new Set([...DATA.cars.map(c => c['Машина']), ...Object.keys(pl), ...Object.keys(sp)])].filter(n => pl[n] || sp[n]);
+  const mx = Math.max(1, ...names.map(n => Math.max(pl[n] || 0, sp[n] || 0)));
+  return `<div class="bch">${names.map(n => `<span>${esc(short(n))}</span><div class="bars"><i style="width:${(pl[n] || 0) / mx * 100}%;background:${ccol(n)}"></i><i style="width:${(sp[n] || 0) / mx * 100}%;background:${ccol(n)};opacity:.45"></i></div><div class="r">${rub(pl[n] || 0)}<small>потрачено ${rub(sp[n] || 0)}</small></div>`).join('')}</div>
+  <div class="lg"><span><i style="background:var(--tx2)"></i>план${DATA.costs && DATA.costs.length ? ' (Финансист)' : ''}</span><span><i style="background:var(--tx2);opacity:.45"></i>потрачено за ${new Date().getFullYear()} г. (журнал ТО + факт бюджета)</span></div>`; }
 function vSum() {
   const {ev, to} = events(); const n = CH.mileage.length + CH.service.length + CH.budget.length;
-  const total = budget().reduce((s, b) => s + (+b.plan || 0), 0);
+  const total = Object.values(planBy()).reduce((a, x) => a + x, 0), sp = Object.values(spent()).reduce((a, x) => a + x, 0);
+  const near = ev.filter(e => e.d <= 90), far = ev.filter(e => e.d > 90);
   return head(OWN ? 'Мой гараж' : 'Гараж', `${OWN ? 'Обновлено' : 'Таблица от'} ${esc(String(DATA.built).slice(8,10) + '.' + String(DATA.built).slice(5,7) + ' ' + String(DATA.built).slice(11))}${n ? ` · локально: ${n}` : ''}`) + actions() +
-  `<div class="grid g2"><div><h2>Ближайшие события</h2><div class="glass">${ev.map(e => { const st = stD(e.d);
-    return `<div class="ev"><span class="dot s-${st}"></span><div class="t"><b>${esc(e.t)}</b><span>${e.s}</span></div><span class="badge b-${st}">${dlabel(e.d)}</span></div>`; }).join('')}</div></div>
+  `<h2>Машины</h2><div class="grid g3">${cars().map(carCard).join('')}</div>
+  <div class="grid g2"><div><h2>Ближайшие события · 90 дней</h2><div class="glass">${near.map(evRow).join('') || '<div class="ev muted">В ближайшие 90 дней событий нет</div>'}
+    ${far.length ? `<details class="more"><summary><span class="sh">Показать все (ещё ${far.length})</span><span class="hd">Скрыть</span></summary>${far.map(evRow).join('')}</details>` : ''}</div></div>
   <div><h2>До ТО</h2><div class="glass">${to.map(e => { const st = stK(e.k), c = cars().find(x => 'ТО ' + short(x.name) === e.t);
     return `<div class="ev" style="flex-wrap:wrap"><span class="dot s-${st}"></span><div class="t"><b>${esc(e.t)}</b><span>${e.s}</span></div><span class="badge b-${st}">${fmt(e.k)} км</span>
     <div class="bar" style="flex-basis:100%"><i data-w="${Math.max(3, 100 - e.k / c.interval * 100)}" style="background:${COL[st]}"></i></div></div>`; }).join('')}</div>
-  <h2>Бюджет (план)</h2><div class="glass card" data-tab="bud" style="cursor:pointer"><div class="big">${rub(total)}</div><div class="muted">${budget().length} статей · откройте «Бюджет»</div></div></div></div>
-  <h2>Машины</h2><div class="grid g3">${cars().map(carCard).join('')}</div>`;
+  <h2>Бюджет</h2><div class="glass card" data-tab="bud" style="cursor:pointer"><div style="display:flex;gap:24px;flex-wrap:wrap"><div><div class="muted">План</div><div class="big">${rub(total)}</div></div><div><div class="muted">Потрачено</div><div class="big s-amb">${rub(sp)}</div></div></div>${budChart()}<div class="muted" style="margin-top:10px">${(DATA.costs && DATA.costs.length) || budget().length} статей · откройте «Бюджет»</div></div></div></div>`;
 }
 function vCars() {
   if (state.car) return vCar(cars().find(c => c.name === state.car));
@@ -457,8 +492,7 @@ function vIns() {
 function vBud() {
   const b = budget(), tot = b.reduce((s, x) => s + (+x.plan || 0), 0), fact = b.reduce((s, x) => s + (+x.fact || 0), 0);
   const by = {}; b.forEach(x => by[x.car] = (by[x.car] || 0) + (+x.plan || 0));
-  return head('Бюджет', 'Плановые расходы на авто') + `<div class="glass card"><div class="muted">Всего по плану</div><div class="big">${rub(tot)}</div><div class="muted">Факт: ${rub(fact)}</div>
-  ${Object.entries(by).map(([k, v]) => `<div style="margin-top:12px;display:flex;justify-content:space-between;font-size:14px"><span>${esc(short(k))}</span><b>${rub(v)}</b></div><div class="bar"><i data-w="${tot ? v / tot * 100 : 0}" style="background:linear-gradient(90deg,var(--blue),var(--amber))"></i></div>`).join('')}</div>
+  return head('Бюджет', 'Плановые расходы на авто') + `<div class="glass card"><div class="muted">Всего по плану</div><div class="big">${rub(Object.values(planBy()).reduce((a, x) => a + x, 0))}</div><div class="muted">Потрачено: <b class="s-amb">${rub(Object.values(spent()).reduce((a, x) => a + x, 0))}</b></div>${budChart()}</div>
   <div style="margin:14px 0">${`<div class="act glass am" data-act="expense" style="flex-direction:row;justify-content:center"><div class="ic" style="width:32px;height:32px">${ic('plus', 18)}</div>Добавить расход</div>`}</div>
   <div class="glass">${b.map(x => `<div class="row"><div class="l"><b>${esc(x.item)}</b>${x.local ? '<span class="tag new">новое</span>' : ''}<small>${esc(short(x.car))}${x.due ? ' · ' + esc(x.due) : ''}${x.note ? ' · ' + esc(x.note) : ''}</small></div><div class="r">${x.plan ? rub(x.plan) : '<span class="muted">сумма?</span>'}${x.fact ? `<small class="muted" style="display:block">факт ${rub(x.fact)}</small>` : ''}</div></div>`).join('')}</div>`;
 }
@@ -797,11 +831,24 @@ function idb(mode, fn) { return new Promise((res, rej) => { const o = indexedDB.
 const fhSet = h => idb('readwrite', s => s.put(h, 'fh')).catch(() => {});
 if (FSA && window.indexedDB) idb('readonly', s => s.get('fh')).then(h => { if (h) { FH = h; render(); } }).catch(() => {});
 function fdt(s) { if (!s) return 'никогда'; const d = new Date(s); return d.toLocaleString('ru-RU', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'}); }
-function syncBadge() { const n = CH.mileage.length + CH.service.length + CH.budget.length;
-  if (srvOn()) { const cls = NET.state === 'ok' && !unsentN() ? '' : NET.state === 'busy' || NET.state === 'idle' ? ' busy' : ' dirty';
-    return `<span class="sync${cls}" data-act="srv" title="Синхронизация с сервером — нажмите для настроек"><span class="dt"></span>${NET.state === 'ok' && unsentN() ? 'Не отправлено: ' + unsentN() : NET.state === 'ok' && n ? 'Ждут бота: ' + n : esc(netText())}</span>`; }
+function rel(x) { if (!x) return 'никогда'; const m = Math.round((Date.now() - new Date(x)) / 6e4);
+  return m < 1 ? 'только что' : m < 60 ? m + ' мин назад' : m < 1440 ? Math.round(m / 60) + ' ч назад' : Math.round(m / 1440) + ' дн. назад'; }
+function syncAge() { return SY.last ? (Date.now() - new Date(SY.last)) / 36e5 : Infinity; }  // часы
+function syncBadge() { const n = CH.mileage.length + CH.service.length + CH.budget.length, age = syncAge();
+  const ageCls = !SY.last ? ' bad' : age > 24 ? ' stale' : '';
+  if (srvOn()) { const cls = NET.state === 'err' || NET.state === 'off' ? ' bad' : NET.state === 'busy' ? ' busy' : unsentN() ? ' dirty' : ageCls;
+    const txt = NET.state === 'ok' && unsentN() ? 'Не отправлено: ' + unsentN() : NET.state === 'ok' && n ? 'Ждут бота: ' + n : NET.state === 'busy' ? 'синхр…' : NET.state === 'err' ? 'ошибка' : NET.state === 'off' ? 'нет сети' : rel(SY.last);
+    return `<span class="sync${cls}" data-act="srv" title="Синхронизация с GitHub: ${esc(fdt(SY.last))} — нажмите для настроек"><span class="dt"></span>${esc(txt)}</span>`; }
   return SY.dirty ? `<span class="sync dirty" data-act="savecloud" title="Есть несохранённые изменения — нажмите, чтобы сохранить"><span class="dt"></span>Не сохранено</span>`
-    : `<span class="sync" data-act="srv" title="Синхронизация — нажмите для настройки"><span class="dt"></span>Синхр.: ${fdt(SY.last)}</span>`; }
+    : `<span class="sync${ageCls || (SY.last ? '' : ' bad')}" data-act="srv" title="Синхронизация — нажмите для настройки"><span class="dt"></span>${SY.last ? rel(SY.last) : 'Синхр.: никогда'}</span>`; }
+function settings() { sheet(`<h3>Настройки</h3><div class="setl">
+  <a data-act="srv">${ic('cloud')}<span>Синхронизация GitHub<small>${srvOn() ? 'подключено · ' + esc(rel(SY.last)) : 'не подключено'}</small></span></a>
+  <a data-act="open">${ic('up')}<span>Открыть данные из iCloud</span></a>
+  <a data-act="savecloud">${ic('cloud')}<span>Сохранить в iCloud</span></a>
+  <a data-act="help">${ic('help')}<span>Как синхронизировать</span></a>
+  <a data-act="theme">${ic('moon')}<span>Тема (тёмная / светлая)</span></a></div>
+  <button class="btn sec" data-act="close" style="width:100%;margin-top:12px">Закрыть</button>`); }
+setInterval(() => document.querySelectorAll('.sync').forEach(e => { if (!e.closest('.sheet')) e.outerHTML = syncBadge(); }), 30000);
 function payload() { return {app: 'garage', format: 1, saved: new Date().toISOString(), built: DATA.built, data: DATA, changes: CH}; }
 function mergeFile(o) {
   if (!o || o.app !== 'garage') throw new Error('Это не файл Гаража');
@@ -871,10 +918,11 @@ document.addEventListener('click', e => {
   else if (a === 'savecloud') { close(); saveCloud(); }
   else if (a === 'help') help();
   else if (a === 'srv') srvSettings();
+  else if (a === 'settings') settings();
   else if (a === 'disc') { if (confirm('Удалить ключ GitHub с этого устройства?')) { VAULT.get('shared:token').then(t => { if (t === SRV.token) VAULT.set('shared:token', null); SRV = {repo: SRV.repo, token: ''}; lsSet(LSV, JSON.stringify(SRV)); VAULT.set('garage:gh', SRV); render(); }); close(); render(); toast('Ключ удалён'); } }
   else if (a === 'addphoto') pickPhotos({car: t.dataset.car, date: t.dataset.date || null, km: t.dataset.km === '' ? null : +t.dataset.km});
   else if (a === 'wo') woForm(t.dataset.car);
-  else if (a === 'theme') theme(true);
+  else if (a === 'theme') { theme(true); if ($('#sheet').classList.contains('on') && $('#sheet h3') && $('#sheet h3').textContent === 'Настройки') settings(); }
   else if (a === 'caradd') carForm(null);
   else if (a === 'sts') stsForm();
   else if (a === 'caredit') carForm(t.dataset.car);
