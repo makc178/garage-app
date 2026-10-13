@@ -145,6 +145,8 @@ details[open] .chev{transform:rotate(90deg)}
 .viewer img{width:100%;border-radius:16px;display:block}
 .tag.new{background:rgba(61,123,255,.18);color:var(--blue)}
 .row{display:flex;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px}
+.bic{width:36px;height:36px;flex:0 0 36px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}.bic.ok{border:1.5px solid var(--green);color:var(--green)}.bic.del{border:1.5px solid var(--tx2);color:var(--tx2);opacity:.8}.bsw{touch-action:pan-y;transition:transform .2s}
+.snack{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translate(-50%,200%);z-index:61;display:flex;gap:16px;align-items:center;padding:12px 16px;border-radius:16px;font-size:14px;font-weight:600;transition:transform .3s}.snack.on{transform:translate(-50%,0)}.snack a{color:var(--blue);cursor:pointer}
 .row:last-child{border-bottom:0}.row .l{min-width:0}.row .l small{display:block;color:var(--tx2);font-size:12.5px;margin-top:2px}
 .row .r{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600}
 .muted{color:var(--tx2);font-size:13px}
@@ -188,7 +190,7 @@ label.f input:focus,label.f select:focus,label.f textarea:focus{border-color:var
 <div class="ov" id="ov"></div>
 <div class="sheet" id="sheet"></div>
 <div class="dd" id="dd"></div>
-<div class="toast glass" id="toast"></div>
+<div class="toast glass" id="toast"></div><div class="snack glass" id="snack"><span id="snackt"></span><a data-act="budundo">Отменить</a></div>
 <input type="file" id="imp" accept=".json,application/json,text/plain" hidden>
 <script>
 "use strict";
@@ -254,6 +256,7 @@ const I = {
   moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>', chev:'<path d="M9 6l6 6-6 6"/>', left:'<path d="M15 6l-6 6 6 6"/>',
   cloud:'<path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19.5 10 4 4 0 0 1 18 18z"/>', help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/>',
   gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>', trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
   doc:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>'
 };
 const ic = (n, s) => `<svg class="i" viewBox="0 0 24 24"${s ? ` style="width:${s}px;height:${s}px"` : ''}>${I[n]}</svg>`;
@@ -306,8 +309,42 @@ function model(c) {
   return {raw: c, name: n, plate: c['Госномер'], vin: c['VIN'], cur, next, left: next - cur, interval, lastTO, mil, svc, plan: DATA.plans[n], fc};
 }
 function insurance() { return DATA.insurance.map(p => ({car: p['Машина'], type: p['Тип'], co: p['Страховая'], num: p['Номер полиса'], from: pd(p['Начало']), to: pd(p['Окончание']), cost: p['Стоимость, ₽'], note: p['Примечание'], file: p['Полис (файл)']})); }
-function budget() { return [...DATA.budget.map(b => ({car: b['Машина'], item: b['Статья'], plan: b['План, ₽'], due: b['Срок'], fact: b['Факт, ₽'], status: b['Статус'], note: b['Комментарий']})),
-                            ...CH.budget.map(b => ({...b, local: 1}))]; }
+function budget() { const ops = CH.budget.filter(b => b.op), hit = new Set();
+  const rows = [...DATA.budget.map(b => ({car: b['Машина'], item: b['Статья'], plan: b['План, ₽'], due: b['Срок'], fact: b['Факт, ₽'], status: b['Статус'], note: b['Комментарий']})),
+                ...CH.budget.filter(b => !b.op).map(b => ({...b, local: 1}))];
+  return rows.flatMap(r => { const o = ops.find(o => !hit.has(o) && o.car === r.car && o.item === r.item && !r.local && !+r.fact); if (!o) return [r]; hit.add(o);
+    return o.op === 'del' ? [] : [{...r, plan: null, was: r.plan, fact: o.fact, due: fdRu(o.date), status: 'Факт', pend: 1}]; }).map(r => r.was || !+r.fact ? r : {...r, was: +((String(r.note || '').match(/план был (\d+)/) || [])[1]) || null}); }
+const mskToday = () => new Intl.DateTimeFormat('en-CA', {timeZone: 'Europe/Moscow'}).format(new Date());
+const fdRu = s => s ? String(s).slice(0, 10).split('-').reverse().join('.') : '';
+let BROWS = [];
+const isPlanned = x => !+x.fact && x.status !== 'Факт' && !x.pend;
+function budDone(i) { const x = BROWS[i]; if (!x) return;
+  sheet(`<h3>Исполнено (куплено)</h3><p class="sub" style="margin:0 0 12px">${esc(x.item)} · ${esc(short(x.car))}${x.plan ? ' · план ' + rub(x.plan) : ''}</p><form id="bdf" data-i="${i}">
+  <label class="f">Фактическая сумма, ₽<input name="fact" type="number" inputmode="numeric" min="0" required value="${x.plan ?? ''}"></label>
+  <label class="f">Дата покупки<input name="date" type="date" required value="${mskToday()}"></label>
+  <div style="display:flex;gap:10px;margin-top:6px"><button type="button" class="btn sec" data-act="close" style="flex:1">Отмена</button><button class="btn" style="flex:2">Сохранить</button></div></form>`); }
+function budDel(i) { const x = BROWS[i]; if (!x) return;
+  sheet(`<h3>Удалить «${esc(x.item)}» из плана?</h3><p class="sub" style="margin:0 0 16px">${esc(short(x.car))}${x.plan ? ' · план ' + rub(x.plan) : ''}. Позиция исчезнет из бюджета и из таблицы.</p>
+  <div style="display:flex;gap:10px"><button type="button" class="btn sec" data-act="close" style="flex:1">Отмена</button><button type="button" class="btn" data-act="buddelok" data-i="${i}" style="flex:1;background:var(--red);box-shadow:none">Удалить</button></div>`); }
+function budOp(x, op, extra) {
+  let undo;
+  if (x.local) { const j = CH.budget.findIndex(b => b.id === x.id); if (j >= 0) { const prev = {...CH.budget[j]};
+    if (op === 'del') { CH.budget.splice(j, 1); undo = () => CH.budget.splice(j, 0, prev); } else Object.assign(CH.budget[j], {fact: extra.fact, due: fdRu(extra.date), status: 'Факт', note: [prev.note, 'план был ' + (prev.plan ?? '')].filter(Boolean).join('; '), plan: null}); } }
+  else { const o = {op, car: x.car, item: x.item, plan: x.plan ?? null, ...(extra || {}), id: uid(), ts: new Date().toISOString()}; CH.budget.push(o);
+    undo = () => { CH.budget = CH.budget.filter(b => b !== o); SY.sent = (SY.sent || []).filter(k => k !== o.id); saveSY(); }; }
+  save(); markDirty(); close(); render();
+  if (op === 'del') { clearTimeout(budOp.t); budOp.undo = undo; $('#snackt').textContent = 'Удалено из плана'; $('#snack').classList.add('on');
+    budOp.t = setTimeout(() => { $('#snack').classList.remove('on'); budOp.undo = null; if (srvOn()) srvSync(); }, 4000); }
+  else { toast('Отмечено как исполнено'); if (srvOn()) setTimeout(() => srvSync(), 300); } }
+function budUndo() { clearTimeout(budOp.t); $('#snack').classList.remove('on'); if (budOp.undo) { budOp.undo(); budOp.undo = null; save(); render(); toast('Удаление отменено'); } }
+(() => { let sx, sy, el; document.addEventListener('touchstart', e => { el = e.target.closest('.bsw'); if (!el) return; sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, {passive: true});
+  document.addEventListener('touchmove', e => { if (!el) return; const dx = e.touches[0].clientX - sx; if (Math.abs(dx) > Math.abs(e.touches[0].clientY - sy)) el.style.transform = `translateX(${Math.max(-90, Math.min(90, dx))}px)`; }, {passive: true});
+  document.addEventListener('touchend', e => { if (!el) return; const dx = e.changedTouches[0].clientX - sx, i = +el.dataset.i; el.style.transform = ''; el = null;
+    if (dx > 80) budDone(i); else if (dx < -80) budDel(i); }); })();
+document.addEventListener('submit', e => { if (e.target.id !== 'bdf') return; e.preventDefault(); e.stopImmediatePropagation();
+  const f = Object.fromEntries(new FormData(e.target)), x = BROWS[+e.target.dataset.i]; if (!x) return close();
+  const v = +String(f.fact).replace(/[\s\u00a0]/g, '').replace(',', '.'); if (!(v >= 0) || f.fact === '') return toast('Укажите сумму');
+  budOp(x, 'done', {fact: v, date: f.date || mskToday()}); }, true);
 function events() {
   const ev = [];
   insurance().forEach(p => p.to && ev.push({t: `${p.type} ${short(p.car)}`, s: `${p.co} · до ${fd(p.to)}`, d: days(p.to), ic: 'shield'}));
@@ -501,7 +538,7 @@ function vBud() {
   const by = {}; b.forEach(x => by[x.car] = (by[x.car] || 0) + (+x.plan || 0));
   return head('Бюджет', 'Плановые расходы на авто') + `<div class="glass card"><div class="muted">Всего по плану</div><div class="big">${rub(Object.values(planBy()).reduce((a, x) => a + x, 0))}</div><div class="muted">Потрачено: <b class="s-amb">${rub(Object.values(spent()).reduce((a, x) => a + x, 0))}</b></div>${budChart()}</div>
   <div style="margin:14px 0">${`<div class="act glass am" data-act="expense" style="flex-direction:row;justify-content:center"><div class="ic" style="width:32px;height:32px">${ic('plus', 18)}</div>Добавить расход</div>`}</div>
-  <div class="glass">${b.map(x => `<div class="row"><div class="l"><b>${esc(x.item)}</b>${x.local ? '<span class="tag new">новое</span>' : ''}<small>${esc(short(x.car))}${x.due ? ' · ' + esc(x.due) : ''}${x.note ? ' · ' + esc(x.note) : ''}</small></div><div class="r">${x.plan ? rub(x.plan) : '<span class="muted">сумма?</span>'}${x.fact ? `<small class="muted" style="display:block">факт ${rub(x.fact)}</small>` : ''}</div></div>`).join('')}</div>`;
+  <div class="glass">${(BROWS = b).map((x, i) => `<div class="row${isPlanned(x) ? ' bsw' : ''}" data-i="${i}"><div class="l"><b>${esc(x.item)}</b>${x.local ? '<span class="tag new">новое</span>' : ''}${x.pend ? '<span class="tag new">отправлено</span>' : ''}<small>${esc(short(x.car))}${x.due ? ' · ' + esc(x.due) : ''}${x.note ? ' · ' + esc(x.note) : ''}</small></div><div class="r" style="display:flex;align-items:center;gap:8px"><div style="text-align:right">${+x.fact ? `${x.was ? `<small class="muted" style="display:block;text-decoration:line-through">${rub(x.was)}</small>` : ''}<span class="s-grn">${rub(x.fact)}</span>` : x.plan ? rub(x.plan) : '<span class="muted">сумма?</span>'}</div>${isPlanned(x) ? `<button class="bic ok" data-act="buddone" data-i="${i}" aria-label="Исполнено (куплено)" title="Исполнено (куплено)">${ic('check', 18)}</button><button class="bic del" data-act="buddel" data-i="${i}" aria-label="Удалить" title="Удалить">${ic('trash', 18)}</button>` : ''}</div></div>`).join('')}</div>`;
 }
 function render() {
   nav();
@@ -585,7 +622,7 @@ async function srvSync(manual) {
   if (!srvOn() || NET.busy) return; if (navigator.onLine === false) { NET.state = 'off'; render(); return; }
   NET.busy = true; NET.state = 'busy'; render();
   try { const s = sentSet();
-    for (const k of ['mileage', 'service', 'budget']) for (const x of CH[k]) { const id = keyOf(x); if (s.has(id)) continue;
+    for (const k of ['mileage', 'service', 'budget']) for (const x of CH[k]) { const id = keyOf(x); if (s.has(id) || (x.op === 'del' && Date.now() - Date.parse(x.ts) < 4500)) continue;
       const body = JSON.stringify({kind: k, item: x}, null, 1);
       await gh(`changes/${fid(id)}.json`, {method: 'PUT', body: JSON.stringify({message: `app: ${k} ${x.car || ''}`.trim(), content: b64(body)})});
       s.add(id); SY.sent = [...s]; saveSY(); }
@@ -629,7 +666,8 @@ function applyAll(db) {
   OPS.forEach(o => applyOp(db, o));
   CH.mileage.forEach(m => { if (ap.has(m.id)) return; db.mileage.push({'Машина': m.car, 'Дата': m.date, 'Пробег, км': m.km, 'Комментарий': m.note || '', id: m.id}); bumpKm(db, m.car, m.km); mark(m.id); });
   CH.service.forEach(s => { if (ap.has(s.id)) return; db.service.push({'Машина': s.car, 'Дата': s.date, 'Пробег, км': s.km, 'Вид работ': s.type, 'Что сделано / заменено': s.what || '', 'Сервис': s.shop || '', 'Стоимость, ₽': s.cost, 'Следующее ТО (км)': s.next, 'Фото': '', id: s.id}); bumpKm(db, s.car, s.km); mark(s.id); });
-  CH.budget.forEach(b => { if (ap.has(b.id)) return; db.budget.push({'Машина': b.car, 'Статья': b.item, 'План, ₽': b.plan, 'Срок': b.due, 'Факт, ₽': b.fact, 'Статус': b.status, 'Комментарий': b.note || '', id: b.id}); mark(b.id); });
+  CH.budget.forEach(b => { if (ap.has(b.id)) return; if (b.op) { const j = db.budget.findIndex(r => r['Машина'] === b.car && r['Статья'] === b.item && !+r['Факт, ₽']);
+      if (j >= 0) { if (b.op === 'del') db.budget.splice(j, 1); else Object.assign(db.budget[j], {'План, ₽': null, 'Факт, ₽': b.fact, 'Срок': fdRu(b.date), 'Статус': 'Факт', 'Комментарий': [db.budget[j]['Комментарий'], 'план был ' + (db.budget[j]['План, ₽'] ?? '')].filter(Boolean).join('; ')}); } mark(b.id); return; } db.budget.push({'Машина': b.car, 'Статья': b.item, 'План, ₽': b.plan, 'Срок': b.due, 'Факт, ₽': b.fact, 'Статус': b.status, 'Комментарий': b.note || '', id: b.id}); mark(b.id); });
   PHQ.filter(p => p.up && !p.carimg && !ap.has(p.id)).forEach(p => {
     const row = !p.draft && db.service.find(s => ek(s['Машина'], s['Дата'], s['Пробег, км']) === p.ek);
     if (row) row['Фото'] = [row['Фото'], p.path].filter(Boolean).join('; ');
@@ -941,6 +979,10 @@ document.addEventListener('click', e => {
   else if (a === 'sts') stsForm();
   else if (a === 'caredit') carForm(t.dataset.car);
   else if (a === 'cardel') carDel(t.dataset.car);
+  else if (a === 'buddone') budDone(+t.dataset.i);
+  else if (a === 'buddel') budDel(+t.dataset.i);
+  else if (a === 'buddelok') budOp(BROWS[+t.dataset.i], 'del');
+  else if (a === 'budundo') budUndo();
   else if (a === 'carphoto') pickCarPhoto();
   else if (a === 'mkrepo') mkRepo();
   else if (a === 'diag') diag();
