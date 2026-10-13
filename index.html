@@ -145,7 +145,7 @@ details[open] .chev{transform:rotate(90deg)}
 .viewer img{width:100%;border-radius:16px;display:block}
 .tag.new{background:rgba(61,123,255,.18);color:var(--blue)}
 .row{display:flex;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px}
-.bic{width:36px;height:36px;flex:0 0 36px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}.bic.ok{border:1.5px solid var(--green);color:var(--green)}.bic.del{border:1.5px solid var(--tx2);color:var(--tx2);opacity:.8}.bsw{touch-action:pan-y;transition:transform .2s}
+.bic{width:36px;height:36px;flex:0 0 36px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}.bic.ok{border:1.5px solid var(--green);color:var(--green)}.bic.del{border:1.5px solid var(--tx2);color:var(--tx2);opacity:.8}.bsw{touch-action:pan-y;transition:transform .2s}.pr{min-height:44px;min-width:64px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;cursor:pointer;border-radius:10px;padding:0 6px;border-bottom:1px dashed transparent}.pr:hover{background:rgba(127,127,127,.12)}.pin{width:110px;height:44px;font-size:16px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;border-radius:10px;padding:0 10px;border:1px solid var(--blue);background:var(--glass);outline:none}
 .snack{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translate(-50%,200%);z-index:61;display:flex;gap:16px;align-items:center;padding:12px 16px;border-radius:16px;font-size:14px;font-weight:600;transition:transform .3s}.snack.on{transform:translate(-50%,0)}.snack a{color:var(--blue);cursor:pointer}
 .row:last-child{border-bottom:0}.row .l{min-width:0}.row .l small{display:block;color:var(--tx2);font-size:12.5px;margin-top:2px}
 .row .r{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600}
@@ -309,11 +309,27 @@ function model(c) {
   return {raw: c, name: n, plate: c['Госномер'], vin: c['VIN'], cur, next, left: next - cur, interval, lastTO, mil, svc, plan: DATA.plans[n], fc};
 }
 function insurance() { return DATA.insurance.map(p => ({car: p['Машина'], type: p['Тип'], co: p['Страховая'], num: p['Номер полиса'], from: pd(p['Начало']), to: pd(p['Окончание']), cost: p['Стоимость, ₽'], note: p['Примечание'], file: p['Полис (файл)']})); }
-function budget() { const ops = CH.budget.filter(b => b.op), hit = new Set();
+function budget() { const ops = CH.budget.filter(b => b.op === 'done' || b.op === 'del'), hit = new Set();
   const rows = [...DATA.budget.map(b => ({car: b['Машина'], item: b['Статья'], plan: b['План, ₽'], due: b['Срок'], fact: b['Факт, ₽'], status: b['Статус'], note: b['Комментарий']})),
                 ...CH.budget.filter(b => !b.op).map(b => ({...b, local: 1}))];
-  return rows.flatMap(r => { const o = ops.find(o => !hit.has(o) && o.car === r.car && o.item === r.item && !r.local && !+r.fact); if (!o) return [r]; hit.add(o);
-    return o.op === 'del' ? [] : [{...r, plan: null, was: r.plan, fact: o.fact, due: fdRu(o.date), status: 'Факт', pend: 1}]; }).map(r => r.was || !+r.fact ? r : {...r, was: +((String(r.note || '').match(/план был (\d+)/) || [])[1]) || null}); }
+  const out = rows.flatMap(r => { const o = ops.find(o => !hit.has(o) && o.car === r.car && o.item === r.item && !r.local && !+r.fact); if (!o) return [r]; hit.add(o);
+    return o.op === 'del' ? [] : [{...r, plan: null, was: r.plan, fact: o.fact, due: fdRu(o.date), status: 'Факт', pend: 1}]; }).map(r => r.was || !+r.fact ? r : {...r, was: +((String(r.note || '').match(/план был (\d+)/) || [])[1]) || null});
+  PDELTA = {plan: {}, fact: {}};
+  CH.budget.filter(b => b.op === 'price').forEach(o => { const r = out.find(r => r.car === o.car && r.item === o.item && +(r[o.f] || 0) === +(o.old || 0) && (o.f === 'fact' ? +r.fact : !+r.fact)) || out.find(r => r.car === o.car && r.item === o.item && (o.f === 'fact' ? +r.fact : !+r.fact)); if (!r) return;
+    PDELTA[o.f][r.car] = (PDELTA[o.f][r.car] || 0) + (+o.v || 0) - (+r[o.f] || 0); r[o.f] = o.v; r.edited = 1; });
+  return out; }
+let PDELTA = {plan: {}, fact: {}};
+const pnum = t => { t = String(t ?? '').replace(/[\s\u00a0₽]/g, '').replace(',', '.'); return t === '' ? NaN : +t; };
+function budPriceEdit(el) { const i = +el.dataset.i, x = BROWS[i]; if (!x || el.querySelector('input')) return; const f = +x.fact ? 'fact' : 'plan', cur = x[f];
+  el.innerHTML = `<input class="pin" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" aria-label="Цена, ₽" value="${cur ?? ''}">`;
+  const inp = el.firstChild; let done = false; inp.focus(); inp.select();
+  const fin = ok => { if (done) return; done = true; if (!ok) return render(); const v = pnum(inp.value);
+    if (!(v >= 0)) { toast('Введите сумму числом'); return render(); } const vv = Math.round(v * 100) / 100;
+    if (vv === +(cur || 0) && cur != null) return render();
+    CH.budget.push({op: 'price', f, car: x.car, item: x.item, old: cur ?? null, v: vv, id: uid(), ts: new Date().toISOString()});
+    save(); markDirty(); render(); toast('Цена сохранена: ' + rub(vv)); if (srvOn()) setTimeout(() => srvSync(), 300); };
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); fin(true); } else if (e.key === 'Escape') { e.preventDefault(); fin(false); } });
+  inp.addEventListener('blur', () => fin(true)); inp.addEventListener('click', e => e.stopPropagation()); }
 const mskToday = () => new Intl.DateTimeFormat('en-CA', {timeZone: 'Europe/Moscow'}).format(new Date());
 const fdRu = s => s ? String(s).slice(0, 10).split('-').reverse().join('.') : '';
 let BROWS = [];
@@ -397,13 +413,13 @@ function cimg(c) { const p = c.raw['Фото машины'];
 function evRow(e) { const st = stD(e.d);
   return `<div class="ev"><span class="dot s-${st}"></span><div class="t"><b>${esc(e.t)}</b><span>${e.s}</span></div><span class="badge b-${st}">${e.d < 0 ? 'просрочено ' + (-e.d) + ' дн.' : dlabel(e.d)}</span></div>`; }
 function spent() { const y = String(new Date().getFullYear()), by = {};
-  if (DATA.costs && DATA.costs.length) { DATA.costs.forEach(x => { if (x.status === 'fact') { const n = fullCar(x.car); by[n] = (by[n] || 0) + (+(x.spent ?? x.amount) || 0); } }); return by; }
+  if (DATA.costs && DATA.costs.length) { DATA.costs.forEach(x => { if (x.status === 'fact') { const n = fullCar(x.car); by[n] = (by[n] || 0) + (+(x.spent ?? x.amount) || 0); } }); budget(); Object.entries(PDELTA.fact).forEach(([n, d]) => by[n] = (by[n] || 0) + d); return by; }
   budget().forEach(b => { if (+b.fact) by[b.car] = (by[b.car] || 0) + +b.fact; });
   cars().forEach(c => c.svc.forEach(x => { if (+x.cost && String(x.date || '').slice(0, 4) === y) by[c.name] = (by[c.name] || 0) + +x.cost; }));
   return by; }
 const fullCar = n => ({'Defender': 'Land Rover Defender', 'Bronco': 'Ford Bronco', 'RRS': 'Range Rover Sport'}[n] || n);
 function planBy() { const pl = {};
-  if (DATA.costs && DATA.costs.length) DATA.costs.forEach(x => { if (x.status === 'fact') return; const n = fullCar(x.car); pl[n] = (pl[n] || 0) + (+x.amount || 0); });
+  if (DATA.costs && DATA.costs.length) { DATA.costs.forEach(x => { if (x.status === 'fact') return; const n = fullCar(x.car); pl[n] = (pl[n] || 0) + (+x.amount || 0); }); budget(); Object.entries(PDELTA.plan).forEach(([n, d]) => pl[n] = (pl[n] || 0) + d); }
   else budget().forEach(x => pl[x.car] = (pl[x.car] || 0) + (+x.plan || 0));
   return pl; }
 function budChart() { const pl = planBy(), sp = spent();
@@ -538,7 +554,7 @@ function vBud() {
   const by = {}; b.forEach(x => by[x.car] = (by[x.car] || 0) + (+x.plan || 0));
   return head('Бюджет', 'Плановые расходы на авто') + `<div class="glass card"><div class="muted">Всего по плану</div><div class="big">${rub(Object.values(planBy()).reduce((a, x) => a + x, 0))}</div><div class="muted">Потрачено: <b class="s-amb">${rub(Object.values(spent()).reduce((a, x) => a + x, 0))}</b></div>${budChart()}</div>
   <div style="margin:14px 0">${`<div class="act glass am" data-act="expense" style="flex-direction:row;justify-content:center"><div class="ic" style="width:32px;height:32px">${ic('plus', 18)}</div>Добавить расход</div>`}</div>
-  <div class="glass">${(BROWS = b).map((x, i) => `<div class="row${isPlanned(x) ? ' bsw' : ''}" data-i="${i}"><div class="l"><b>${esc(x.item)}</b>${x.local ? '<span class="tag new">новое</span>' : ''}${x.pend ? '<span class="tag new">отправлено</span>' : ''}<small>${esc(short(x.car))}${x.due ? ' · ' + esc(x.due) : ''}${x.note ? ' · ' + esc(x.note) : ''}</small></div><div class="r" style="display:flex;align-items:center;gap:8px"><div style="text-align:right">${+x.fact ? `${x.was ? `<small class="muted" style="display:block;text-decoration:line-through">${rub(x.was)}</small>` : ''}<span class="s-grn">${rub(x.fact)}</span>` : x.plan ? rub(x.plan) : '<span class="muted">сумма?</span>'}</div>${isPlanned(x) ? `<button class="bic ok" data-act="buddone" data-i="${i}" aria-label="Исполнено (куплено)" title="Исполнено (куплено)">${ic('check', 18)}</button><button class="bic del" data-act="buddel" data-i="${i}" aria-label="Удалить" title="Удалить">${ic('trash', 18)}</button>` : ''}</div></div>`).join('')}</div>`;
+  <div class="glass">${(BROWS = b).map((x, i) => `<div class="row${isPlanned(x) ? ' bsw' : ''}" data-i="${i}"><div class="l"><b>${esc(x.item)}</b>${x.local ? '<span class="tag new">новое</span>' : ''}${x.pend ? '<span class="tag new">отправлено</span>' : ''}<small>${esc(short(x.car))}${x.due ? ' · ' + esc(x.due) : ''}${x.note ? ' · ' + esc(x.note) : ''}</small></div><div class="r" style="display:flex;align-items:center;gap:8px"><div class="pr" data-act="budprice" data-i="${i}" role="button" tabindex="0" title="Изменить цену" style="text-align:right">${+x.fact ? `${x.was ? `<small class="muted" style="display:block;text-decoration:line-through">${rub(x.was)}</small>` : ''}<span class="s-grn">${rub(x.fact)}</span>` : x.plan ? rub(x.plan) : '<span class="muted">сумма?</span>'}</div>${isPlanned(x) ? `<button class="bic ok" data-act="buddone" data-i="${i}" aria-label="Исполнено (куплено)" title="Исполнено (куплено)">${ic('check', 18)}</button><button class="bic del" data-act="buddel" data-i="${i}" aria-label="Удалить" title="Удалить">${ic('trash', 18)}</button>` : ''}</div></div>`).join('')}</div>`;
 }
 function render() {
   nav();
@@ -666,7 +682,8 @@ function applyAll(db) {
   OPS.forEach(o => applyOp(db, o));
   CH.mileage.forEach(m => { if (ap.has(m.id)) return; db.mileage.push({'Машина': m.car, 'Дата': m.date, 'Пробег, км': m.km, 'Комментарий': m.note || '', id: m.id}); bumpKm(db, m.car, m.km); mark(m.id); });
   CH.service.forEach(s => { if (ap.has(s.id)) return; db.service.push({'Машина': s.car, 'Дата': s.date, 'Пробег, км': s.km, 'Вид работ': s.type, 'Что сделано / заменено': s.what || '', 'Сервис': s.shop || '', 'Стоимость, ₽': s.cost, 'Следующее ТО (км)': s.next, 'Фото': '', id: s.id}); bumpKm(db, s.car, s.km); mark(s.id); });
-  CH.budget.forEach(b => { if (ap.has(b.id)) return; if (b.op) { const j = db.budget.findIndex(r => r['Машина'] === b.car && r['Статья'] === b.item && !+r['Факт, ₽']);
+  CH.budget.forEach(b => { if (ap.has(b.id)) return; if (b.op === 'price') { const col = b.f === 'fact' ? 'Факт, ₽' : 'План, ₽', ok = r => r['Машина'] === b.car && r['Статья'] === b.item && (b.f === 'fact' ? +r['Факт, ₽'] : !+r['Факт, ₽']);
+      const r = db.budget.find(r => ok(r) && +(r[col] || 0) === +(b.old || 0)) || db.budget.find(ok); if (r) r[col] = b.v; mark(b.id); return; } if (b.op) { const j = db.budget.findIndex(r => r['Машина'] === b.car && r['Статья'] === b.item && !+r['Факт, ₽']);
       if (j >= 0) { if (b.op === 'del') db.budget.splice(j, 1); else Object.assign(db.budget[j], {'План, ₽': null, 'Факт, ₽': b.fact, 'Срок': fdRu(b.date), 'Статус': 'Факт', 'Комментарий': [db.budget[j]['Комментарий'], 'план был ' + (db.budget[j]['План, ₽'] ?? '')].filter(Boolean).join('; ')}); } mark(b.id); return; } db.budget.push({'Машина': b.car, 'Статья': b.item, 'План, ₽': b.plan, 'Срок': b.due, 'Факт, ₽': b.fact, 'Статус': b.status, 'Комментарий': b.note || '', id: b.id}); mark(b.id); });
   PHQ.filter(p => p.up && !p.carimg && !ap.has(p.id)).forEach(p => {
     const row = !p.draft && db.service.find(s => ek(s['Машина'], s['Дата'], s['Пробег, км']) === p.ek);
@@ -981,6 +998,7 @@ document.addEventListener('click', e => {
   else if (a === 'cardel') carDel(t.dataset.car);
   else if (a === 'buddone') budDone(+t.dataset.i);
   else if (a === 'buddel') budDel(+t.dataset.i);
+  else if (a === 'budprice') budPriceEdit(t);
   else if (a === 'buddelok') budOp(BROWS[+t.dataset.i], 'del');
   else if (a === 'budundo') budUndo();
   else if (a === 'carphoto') pickCarPhoto();
