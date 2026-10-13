@@ -145,8 +145,8 @@ details[open] .chev{transform:rotate(90deg)}
 .viewer img{width:100%;border-radius:16px;display:block}
 .tag.new{background:rgba(61,123,255,.18);color:var(--blue)}
 .row{display:flex;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px}
-.bic{width:36px;height:36px;flex:0 0 36px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}.bic.ok{border:1.5px solid var(--green);color:var(--green)}.bic.del{border:1.5px solid var(--tx2);color:var(--tx2);opacity:.8}.bsw{touch-action:pan-y;transition:transform .2s}.pr{min-height:44px;min-width:64px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;cursor:pointer;border-radius:10px;padding:0 6px;border-bottom:1px dashed transparent}.pr:hover{background:rgba(127,127,127,.12)}.pin{width:110px;height:44px;font-size:16px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;border-radius:10px;padding:0 10px;border:1px solid var(--blue);background:var(--glass);outline:none}
-.snack{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translate(-50%,200%);z-index:61;display:flex;gap:16px;align-items:center;padding:12px 16px;border-radius:16px;font-size:14px;font-weight:600;transition:transform .3s}.snack.on{transform:translate(-50%,0)}.snack a{color:var(--blue);cursor:pointer}
+.bic{width:44px;height:44px;flex:0 0 44px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}.bic.ok{border:1.5px solid var(--green);color:var(--green)}.bic.ed{border:0;color:var(--tx2);font-size:16px;line-height:1;width:44px;flex-basis:44px;margin-left:-6px}.bic.ed:active{color:var(--blue);background:rgba(127,127,127,.14)}.pr.flash{animation:prf 1s ease}@keyframes prf{0%,40%{background:rgba(90,160,255,.30)}100%{background:transparent}}.bic.del{border:1.5px solid var(--tx2);color:var(--tx2);opacity:.8}.bsw{touch-action:pan-y;transition:transform .2s}.pr{min-height:44px;min-width:64px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;cursor:pointer;border-radius:10px;padding:0 6px;border-bottom:1px dashed transparent}.pr:hover{background:rgba(127,127,127,.12)}.pin{width:110px;height:44px;font-size:16px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;border-radius:10px;padding:0 10px;border:1px solid var(--blue);background:var(--glass);outline:none}
+.snack{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translate(-50%,200%);visibility:hidden;opacity:0;pointer-events:none;z-index:61;display:flex;gap:16px;align-items:center;padding:12px 16px;border-radius:16px;font-size:14px;font-weight:600;transition:transform .3s}.snack.on{transform:translate(-50%,0);visibility:visible;opacity:1;pointer-events:auto}.snack a{color:var(--blue);cursor:pointer}
 .row:last-child{border-bottom:0}.row .l{min-width:0}.row .l small{display:block;color:var(--tx2);font-size:12.5px;margin-top:2px}
 .row .r{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600}
 .muted{color:var(--tx2);font-size:13px}
@@ -320,14 +320,27 @@ function budget() { const ops = CH.budget.filter(b => b.op === 'done' || b.op ==
   return out; }
 let PDELTA = {plan: {}, fact: {}};
 const pnum = t => { t = String(t ?? '').replace(/[\s\u00a0₽]/g, '').replace(',', '.'); return t === '' ? NaN : +t; };
+function budPriceSheet(i) { const x = BROWS[i]; if (!x) return; const f = +x.fact ? 'fact' : 'plan', cur = x[f];
+  sheet(`<h3>Изменить цену</h3><p class="sub" style="margin:0 0 12px">${esc(x.item)} · ${esc(short(x.car))}</p><form id="bpf" data-i="${i}">
+  <label class="f">${f === 'fact' ? 'Фактическая сумма' : 'Плановая сумма'}, ₽<input name="v" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" required value="${cur ?? ''}"></label>
+  <div class="muted" style="font-size:13px;margin:-4px 0 12px">было: ${cur != null ? rub(cur) : '—'}</div>
+  <div style="display:flex;gap:10px;margin-top:6px"><button type="button" class="btn sec" data-act="close" style="flex:1">Отмена</button><button class="btn" style="flex:2">Сохранить</button></div></form>`);
+  setTimeout(() => { const n = document.querySelector('#bpf input[name=v]'); if (n) { n.focus(); n.select(); } }, 60); }
+function budPriceSave(x, i, raw) { const f = +x.fact ? 'fact' : 'plan', cur = x[f], v = pnum(raw); if (!(v >= 0)) { toast('Введите сумму числом'); return false; }
+  const vv = Math.round(v * 100) / 100; if (vv === +(cur || 0) && cur != null) { close(); render(); return true; }
+  const o = {op: 'price', f, car: x.car, item: x.item, old: cur ?? null, v: vv, id: uid(), ts: new Date().toISOString()}; CH.budget.push(o);
+  save(); markDirty(); close(); render();
+  const el = document.querySelector(`[data-act=budprice][data-i="${i}"]`); if (el) { el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1100); }
+  clearTimeout(budOp.t); budOp.undo = () => { CH.budget = CH.budget.filter(b => b !== o); SY.sent = (SY.sent || []).filter(k => k !== o.id); saveSY(); };
+  $('#snackt').textContent = 'Цена изменена'; $('#snack').classList.add('on');
+  budOp.t = setTimeout(() => { $('#snack').classList.remove('on'); budOp.undo = null; if (srvOn()) srvSync(); }, 4000); return true; }
+document.addEventListener('submit', e => { if (e.target.id !== 'bpf') return; e.preventDefault(); e.stopImmediatePropagation();
+  const i = +e.target.dataset.i, x = BROWS[i]; if (!x) return close(); budPriceSave(x, i, new FormData(e.target).get('v')); }, true);
 function budPriceEdit(el) { const i = +el.dataset.i, x = BROWS[i]; if (!x || el.querySelector('input')) return; const f = +x.fact ? 'fact' : 'plan', cur = x[f];
   el.innerHTML = `<input class="pin" type="text" inputmode="decimal" enterkeyhint="done" autocomplete="off" aria-label="Цена, ₽" value="${cur ?? ''}">`;
   const inp = el.firstChild; let done = false; inp.focus(); inp.select();
   const fin = ok => { if (done) return; done = true; if (!ok) return render(); const v = pnum(inp.value);
-    if (!(v >= 0)) { toast('Введите сумму числом'); return render(); } const vv = Math.round(v * 100) / 100;
-    if (vv === +(cur || 0) && cur != null) return render();
-    CH.budget.push({op: 'price', f, car: x.car, item: x.item, old: cur ?? null, v: vv, id: uid(), ts: new Date().toISOString()});
-    save(); markDirty(); render(); toast('Цена сохранена: ' + rub(vv)); if (srvOn()) setTimeout(() => srvSync(), 300); };
+    if (!(v >= 0)) { toast('Введите сумму числом'); return render(); } budPriceSave(x, i, inp.value); };
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); fin(true); } else if (e.key === 'Escape') { e.preventDefault(); fin(false); } });
   inp.addEventListener('blur', () => fin(true)); inp.addEventListener('click', e => e.stopPropagation()); }
 const mskToday = () => new Intl.DateTimeFormat('en-CA', {timeZone: 'Europe/Moscow'}).format(new Date());
@@ -352,7 +365,7 @@ function budOp(x, op, extra) {
   if (op === 'del') { clearTimeout(budOp.t); budOp.undo = undo; $('#snackt').textContent = 'Удалено из плана'; $('#snack').classList.add('on');
     budOp.t = setTimeout(() => { $('#snack').classList.remove('on'); budOp.undo = null; if (srvOn()) srvSync(); }, 4000); }
   else { toast('Отмечено как исполнено'); if (srvOn()) setTimeout(() => srvSync(), 300); } }
-function budUndo() { clearTimeout(budOp.t); $('#snack').classList.remove('on'); if (budOp.undo) { budOp.undo(); budOp.undo = null; save(); render(); toast('Удаление отменено'); } }
+function budUndo() { clearTimeout(budOp.t); $('#snack').classList.remove('on'); if (budOp.undo) { const pr = $('#snackt').textContent === 'Цена изменена'; budOp.undo(); budOp.undo = null; save(); render(); toast(pr ? 'Цена возвращена' : 'Удаление отменено'); } }
 (() => { let sx, sy, el; document.addEventListener('touchstart', e => { el = e.target.closest('.bsw'); if (!el) return; sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, {passive: true});
   document.addEventListener('touchmove', e => { if (!el) return; const dx = e.touches[0].clientX - sx; if (Math.abs(dx) > Math.abs(e.touches[0].clientY - sy)) el.style.transform = `translateX(${Math.max(-90, Math.min(90, dx))}px)`; }, {passive: true});
   document.addEventListener('touchend', e => { if (!el) return; const dx = e.changedTouches[0].clientX - sx, i = +el.dataset.i; el.style.transform = ''; el = null;
@@ -554,7 +567,7 @@ function vBud() {
   const by = {}; b.forEach(x => by[x.car] = (by[x.car] || 0) + (+x.plan || 0));
   return head('Бюджет', 'Плановые расходы на авто') + `<div class="glass card"><div class="muted">Всего по плану</div><div class="big">${rub(Object.values(planBy()).reduce((a, x) => a + x, 0))}</div><div class="muted">Потрачено: <b class="s-amb">${rub(Object.values(spent()).reduce((a, x) => a + x, 0))}</b></div>${budChart()}</div>
   <div style="margin:14px 0">${`<div class="act glass am" data-act="expense" style="flex-direction:row;justify-content:center"><div class="ic" style="width:32px;height:32px">${ic('plus', 18)}</div>Добавить расход</div>`}</div>
-  <div class="glass">${(BROWS = b).map((x, i) => `<div class="row${isPlanned(x) ? ' bsw' : ''}" data-i="${i}"><div class="l"><b>${esc(x.item)}</b>${x.local ? '<span class="tag new">новое</span>' : ''}${x.pend ? '<span class="tag new">отправлено</span>' : ''}<small>${esc(short(x.car))}${x.due ? ' · ' + esc(x.due) : ''}${x.note ? ' · ' + esc(x.note) : ''}</small></div><div class="r" style="display:flex;align-items:center;gap:8px"><div class="pr" data-act="budprice" data-i="${i}" role="button" tabindex="0" title="Изменить цену" style="text-align:right">${+x.fact ? `${x.was ? `<small class="muted" style="display:block;text-decoration:line-through">${rub(x.was)}</small>` : ''}<span class="s-grn">${rub(x.fact)}</span>` : x.plan ? rub(x.plan) : '<span class="muted">сумма?</span>'}</div>${isPlanned(x) ? `<button class="bic ok" data-act="buddone" data-i="${i}" aria-label="Исполнено (куплено)" title="Исполнено (куплено)">${ic('check', 18)}</button><button class="bic del" data-act="buddel" data-i="${i}" aria-label="Удалить" title="Удалить">${ic('trash', 18)}</button>` : ''}</div></div>`).join('')}</div>`;
+  <div class="glass">${(BROWS = b).map((x, i) => `<div class="row${isPlanned(x) ? ' bsw' : ''}" data-i="${i}"><div class="l"><b>${esc(x.item)}</b>${x.local ? '<span class="tag new">новое</span>' : ''}${x.pend ? '<span class="tag new">отправлено</span>' : ''}<small>${esc(short(x.car))}${x.due ? ' · ' + esc(x.due) : ''}${x.note ? ' · ' + esc(x.note) : ''}</small></div><div class="r" style="display:flex;align-items:center;gap:8px"><div class="pr" data-act="budprice" data-i="${i}" role="button" tabindex="0" title="Изменить цену" style="text-align:right">${+x.fact ? `${x.was ? `<small class="muted" style="display:block;text-decoration:line-through">${rub(x.was)}</small>` : ''}<span class="s-grn">${rub(x.fact)}</span>` : x.plan ? rub(x.plan) : '<span class="muted">сумма?</span>'}</div><button class="bic ed" data-act="budpen" data-i="${i}" aria-label="Изменить цену" title="Изменить цену">✎</button>${isPlanned(x) ? `<button class="bic ok" data-act="buddone" data-i="${i}" aria-label="Исполнено (куплено)" title="Исполнено (куплено)">${ic('check', 18)}</button><button class="bic del" data-act="buddel" data-i="${i}" aria-label="Удалить" title="Удалить">${ic('trash', 18)}</button>` : ''}</div></div>`).join('')}</div>`;
 }
 function render() {
   nav();
@@ -999,6 +1012,7 @@ document.addEventListener('click', e => {
   else if (a === 'buddone') budDone(+t.dataset.i);
   else if (a === 'buddel') budDel(+t.dataset.i);
   else if (a === 'budprice') budPriceEdit(t);
+  else if (a === 'budpen') budPriceSheet(+t.dataset.i);
   else if (a === 'buddelok') budOp(BROWS[+t.dataset.i], 'del');
   else if (a === 'budundo') budUndo();
   else if (a === 'carphoto') pickCarPhoto();
@@ -1018,5 +1032,6 @@ theme(); render();
   else VAULT.set('garage:gh', SRV);
   if (srvOn()) VAULT.persist(); render(); srvSync(); })();
 </script>
-</body>
+<script>if ('serviceWorker' in navigator && location.protocol === 'https:') { let rl = false; navigator.serviceWorker.addEventListener('controllerchange', () => { if (!rl) { rl = true; location.reload(); } });
+  navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => r.update()).catch(() => {}); }</script></body>
 </html>
