@@ -610,6 +610,9 @@ function parsePlan(plan, c) {
   if (!r.reg && !r.last && !r.long.length && !r.src.length) r.notes = r.raw ? [r.raw] : [];
   return r; }
 const srcLbl = u => { try { return new URL(u).hostname.replace(/^(www|secure|m)\./, ''); } catch (e) { return u; } };
+// Заголовок карточки машины в «План ТО»: колонка «Название в ТО» листа «Машины» (если появится) или эта настройка; иначе — из названия плана
+const TO_TITLE = {'Land Rover Defender': 'LR Defender 110 3.0', 'Ford Bronco': 'Ford Bronco 2.3', 'Range Rover Sport': 'LR Range Rover Sport'};
+const toTitle = (c, P) => c.raw['Название в ТО'] || TO_TITLE[c.name] || (P ? P.title : c.name);
 function toHead(c) { const P = c.plan ? parsePlan(c.plan, c) : null, raw = c.raw;
   const lastD = raw['Посл. ТО: дата'] ? fd(pd(raw['Посл. ТО: дата'])) : '', lastV = P && P.last ? P.last : [lastD, c.lastTO ? km(c.lastTO) : ''].filter(Boolean).join(' · ') || '—';
   const iv = P && P.reg ? P.reg : [raw['Интервал ТО, мес'] ? raw['Интервал ТО, мес'] + ' мес' : '', c.interval ? km(c.interval) : ''].filter(Boolean).join(' / ');
@@ -619,7 +622,7 @@ function toHead(c) { const P = c.plan ? parsePlan(c.plan, c) : null, raw = c.raw
     ${P.notes.length ? `<h4>Примечания</h4><ul class="bl">${P.notes.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
     ${P.src.length ? `<h4>Источники</h4><div class="srcs">${P.src.map(x => /^https?:\/\//.test(x) ? `<a href="${esc(x)}" target="_blank" rel="noopener noreferrer" title="${esc(x)}">${esc(srcLbl(x))}</a>` : `<span>${esc(x)}</span>`).join('')}</div>` : ''}</div></details>` : '';
   return `<div class="glass card" style="margin:10px 0 14px"><div class="toh">${ring(c.left, c.interval, stK(c.left), fmt(c.left), 'км до ТО')}
-  <div style="min-width:0"><div class="tt">${esc(P ? P.title : c.name)}</div>${P && P.engine ? `<div class="ts">${esc(P.engine)}</div>` : ''}</div></div>
+  <div style="min-width:0"><div class="tt">${esc(toTitle(c, P))}</div>${P && P.engine ? `<div class="ts">${esc(P.engine)}</div>` : ''}</div></div>
   <div class="kvr">${facts.map(([k, v]) => `<div class="kr"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div>${more}</div>`; }
 function planBlock(c, onlyNext) {
   const list = c.plan.services.filter(s => s.km >= c.next - 1) .concat([]);
