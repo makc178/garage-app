@@ -128,7 +128,7 @@ details[open]>summary .chev{transform:rotate(90deg)}
 .part b{font-weight:600}.part .m{color:var(--tx2);margin-top:3px;display:grid;grid-template-columns:auto 1fr;gap:2px 10px}
 .part .m em{font-style:normal;color:var(--tx3)}
 .toh{display:flex;gap:14px;align-items:center}.toh .ring{width:72px;height:72px}.toh .ring svg{width:72px;height:72px}.toh .ring .lbl b{font-size:17px}.toh .ring .lbl small{font-size:11px}
-.toh .tt{font-size:20px;font-weight:600;line-height:1.2}.toh .ts{color:var(--tx2);font-size:13px;margin-top:3px;line-height:1.35}
+.toh .clr{display:flex;align-items:flex-start;gap:8px;margin-top:6px}.toh .clr i{flex:none;width:14px;height:14px;border-radius:50%;border:1px solid rgba(255,255,255,.35);margin-top:3px}.toh .clr b{display:block;font-size:15px;font-weight:500;line-height:1.3}.toh .clr small{display:block;color:var(--tx2);font-size:12px;margin-top:1px}.toh .tt{font-size:20px;font-weight:600;line-height:1.2}.toh .ts{color:var(--tx2);font-size:13px;margin-top:3px;line-height:1.35}
 .kvr{margin:10px 0 0}.kvr .kr{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px;border-top:1px solid var(--line)}.kvr .kr span{color:var(--tx2);font-size:13px;flex:none}.kvr .kr b{font-size:15px;font-weight:500;text-align:right;font-variant-numeric:tabular-nums;min-width:0}
 details.more.tom{margin:4px -16px -16px}details.more.tom .mb2{padding:0 16px 14px}.tom h4{margin:12px 0 2px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tx3)}
 .tom .kr{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:40px;border-bottom:1px solid var(--line);font-size:14px}.tom .kr:last-child{border-bottom:0}.tom .kr b{font-weight:500;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -616,6 +616,15 @@ function engSub(eng, title) { const vols = (String(title).match(/\d[.,]\d/g) || 
   const fuel = x => x.replace(/^(\d[.,]\d)\s+(дизель|бензин|гибрид|турбодизель)(?=\s|$)/i, '$2 $1');
   if (!vols.length) return String(eng || '').split(' · ').map(fuel).join(' · ');
   return String(eng || '').split(' · ').map(fuel).map(x => x.replace(/(^|\s)(\d[.,]\d)(?=\s|$)/g, (m, a, v) => vols.includes(v.replace(',', '.')) ? a : m).replace(/\s{2,}/g, ' ').trim()).filter(Boolean).join(' · '); }
+// мощность: число перед «л.с.» из листа «Машины» («258 кВт / 351 л.с.» -> 351), если в строке двигателя её нет
+const hpOf = v => { const m = String(v || '').match(/(\d+(?:[.,]\d+)?)\s*л\.?\s*с/i); return m ? Math.round(parseFloat(m[1].replace(',', '.'))) : null; };
+function engLine(c, P) { const t = toTitle(c, P), e = engSub(P ? P.engine : '', t), hp = hpOf(c.raw && c.raw['Мощность']); return hp && !/л\.?\s*с/i.test(e) ? [e, hp + ' л.с.'].filter(Boolean).join(' · ') : e; }
+// цвет: фирменное название — колонка «Цвет производителя» листа «Машины», под ним серым цвет по СТС (колонка «Цвет»); оттенок кружка — COLOR_HEX по названию, иначе нейтрально-серый
+const COLOR_HEX = {};
+const COLOR_NEUTRAL = '#8A8F96';
+function colorRow(c) { const r = c.raw || {}, br = String(r['Цвет производителя'] || '').trim(), sts = String(r['Цвет'] || '').trim(); if (!br && !sts) return '';
+  const hx = (br && (r['Цвет HEX'] || COLOR_HEX[br.toLowerCase()])) || COLOR_NEUTRAL;
+  return `<div class="clr"><i style="background:${esc(hx)}"></i><div><b>${esc(br || sts)}</b>${br && sts ? `<small>${esc(sts)} по СТС</small>` : ''}</div></div>`; }
 const srcLbl = u => { try { return new URL(u).hostname.replace(/^(www|secure|m)\./, ''); } catch (e) { return u; } };
 // Заголовок карточки машины в «План ТО»: колонка «Название в ТО» листа «Машины» (если появится) или эта настройка; иначе — из названия плана
 const TO_TITLE = {'Land Rover Defender': 'LR Defender 110 D250', 'Ford Bronco': 'Ford Bronco EB 2.3', 'Range Rover Sport': 'RR Sport D350'};
@@ -632,7 +641,7 @@ function toHead(c) { const P = c.plan ? parsePlan(c.plan, c) : null, raw = c.raw
     ${P.notes.length ? `<h4>Примечания</h4><ul class="bl">${P.notes.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
     ${P.src.length ? `<h4>Источники</h4><div class="srcs">${P.src.map(x => /^https?:\/\//.test(x) ? `<a href="${esc(x)}" target="_blank" rel="noopener noreferrer" title="${esc(x)}">${esc(srcLbl(x))}</a>` : `<span>${esc(x)}</span>`).join('')}</div>` : ''}</div></details>` : '';
   return `<div class="glass card" style="margin:10px 0 14px"><div class="toh">${ring(c.left, c.interval, stK(c.left), fmt(c.left), 'км до ТО')}
-  <div style="min-width:0"><div class="tt">${esc(toTitle(c, P))}</div>${P && engSub(P.engine, toTitle(c, P)) ? `<div class="ts">${esc(engSub(P.engine, toTitle(c, P)))}</div>` : ''}</div></div>
+  <div style="min-width:0"><div class="tt">${esc(toTitle(c, P))}</div>${engLine(c, P) ? `<div class="ts">${esc(engLine(c, P))}</div>` : ''}${colorRow(c)}</div></div>
   <div class="kvr">${facts.map(([k, v]) => `<div class="kr"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div>${more}</div>`; }
 function planBlock(c, onlyNext) {
   const list = c.plan.services.filter(s => s.km >= c.next - 1) .concat([]);
