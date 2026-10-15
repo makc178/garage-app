@@ -34,7 +34,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 svg.i{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .app{display:flex;min-height:100vh}
 nav.side{display:none}
-main{flex:1;min-width:0;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 186px);max-width:1180px;margin:0 auto;width:100%}
+main{flex:1;min-width:0;padding:calc(env(safe-area-inset-top) + 14px) 16px calc(var(--tabh, calc(env(safe-area-inset-bottom) + 170px)) + 16px);max-width:1180px;margin:0 auto;width:100%}
 header.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:6px 2px 18px}
 h1{font-size:32px;font-weight:750;letter-spacing:-.6px;margin:0}
 .sub{color:var(--tx2);font-size:13px;margin-top:2px}
@@ -120,13 +120,28 @@ details.svc{margin-bottom:12px;overflow:hidden}
 details.svc summary{list-style:none;cursor:pointer;padding:16px;display:flex;align-items:center;gap:12px}
 details.svc summary::-webkit-details-marker{display:none}
 .svc .km{font-size:19px;font-weight:700}.svc .chev{transition:transform .3s;color:var(--tx3)}
-details[open] .chev{transform:rotate(90deg)}
+details[open]>summary .chev{transform:rotate(90deg)}
 .work{padding:12px 16px;border-top:1px solid var(--line)}
 .work .wh{display:flex;justify-content:space-between;gap:10px;font-weight:600;font-size:14.5px}
 .work .wh span{color:var(--tx2);font-weight:500;white-space:nowrap;font-size:13px}
 .part{margin:8px 0 0 10px;padding:9px 12px;border-radius:14px;background:var(--glass2);font-size:13px}
 .part b{font-weight:600}.part .m{color:var(--tx2);margin-top:3px;display:grid;grid-template-columns:auto 1fr;gap:2px 10px}
 .part .m em{font-style:normal;color:var(--tx3)}
+.toh{display:flex;gap:14px;align-items:center}.toh .ring{width:72px;height:72px}.toh .ring svg{width:72px;height:72px}.toh .ring .lbl b{font-size:17px}.toh .ring .lbl small{font-size:11px}
+.toh .tt{font-size:20px;font-weight:600;line-height:1.2}.toh .ts{color:var(--tx2);font-size:13px;margin-top:3px;line-height:1.35}
+.kvr{margin:10px 0 0}.kvr .kr{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px;border-top:1px solid var(--line)}.kvr .kr span{color:var(--tx2);font-size:13px;flex:none}.kvr .kr b{font-size:15px;font-weight:500;text-align:right;font-variant-numeric:tabular-nums;min-width:0}
+details.more.tom{margin:4px -16px -16px}details.more.tom .mb2{padding:0 16px 14px}.tom h4{margin:12px 0 2px;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--tx3)}
+.tom .kr{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:40px;border-bottom:1px solid var(--line);font-size:14px}.tom .kr:last-child{border-bottom:0}.tom .kr b{font-weight:500;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tom ul.bl{margin:4px 0 0;padding-left:18px;font-size:14px;line-height:1.4}.tom ul.bl li{margin:4px 0}.tom ul.bl li::marker{color:var(--tx3)}
+.srcs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.srcs a,.srcs span{display:inline-flex;align-items:center;padding:5px 11px;border-radius:999px;background:var(--glass2);border:1px solid var(--line);font-size:12.5px;font-weight:500;color:var(--tx2);text-decoration:none;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.svc .km{font-size:20px;font-weight:600}.svc .sl{color:var(--tx2);font-size:13px;margin-top:4px;line-height:1.35}.svc .fcp{display:inline-flex;margin-top:6px;padding:3px 10px;border-radius:999px;background:var(--glass2);border:1px solid var(--line);font-size:12.5px;font-weight:600;color:var(--tx2);margin-right:6px}
+.svc .stot{text-align:right;white-space:nowrap}.svc .stot b{display:block;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}.svc .stot small{display:block;font-size:13px;color:var(--tx2);margin-top:2px}
+details.wk{border-top:1px solid var(--line)}details.wk>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 16px;min-height:44px;box-sizing:border-box}details.wk>summary::-webkit-details-marker{display:none}
+.wk .wn{flex:1;min-width:0;font-size:15px;font-weight:500;line-height:1.3}.wk .wp{white-space:nowrap;color:var(--tx2);font-size:13px;text-align:right;font-variant-numeric:tabular-nums}
+.wk .chev,.pt .chev{display:flex;color:var(--tx3);transition:transform .2s}.wk .chev svg,.pt .chev svg{width:16px;height:16px}
+.wk .wb{padding:0 16px 12px}details.pt{margin:8px 0 0;border-radius:14px;background:var(--glass2)}details.pt>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 12px}details.pt>summary::-webkit-details-marker{display:none}
+.pt .pn{flex:1;min-width:0}.pt .pn b{display:block;font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pt .pn small{display:block;color:var(--tx2);font-size:13px;margin-top:2px;font-variant-numeric:tabular-nums}
+.pt .m{color:var(--tx2);padding:0 12px 10px;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:13px}.pt .m em{font-style:normal;color:var(--tx3)}.pt .m code{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:13px;color:var(--tx);word-break:break-all}
 .tot{display:grid;grid-template-columns:1fr auto auto;gap:6px 16px;padding:14px 16px;border-top:1px solid var(--line);font-size:14px;font-variant-numeric:tabular-nums}
 .tot .h{color:var(--tx3);font-size:12px}.tot .sum{font-weight:750;font-size:16px}
 .tag{font-size:11px;padding:2px 8px;border-radius:8px;background:rgba(245,165,36,.15);color:var(--amber);font-weight:600;margin-left:6px}
@@ -537,20 +552,75 @@ function vCar(c) {
   <h2>История ТО и ремонтов</h2><div class="glass">${c.svc.map(svcRow).join('') || '<div class="row muted">Нет записей</div>'}</div>
   <h2>История пробега</h2><div class="glass">${c.mil.map(m => `<div class="row"><div class="l">${m.date ? fd(pd(m.date)) : '—'}${m.local ? '<span class="tag new">новое</span>' : ''}${m.note ? `<small>${esc(m.note)}</small>` : ''}</div><div class="r">${km(m.km)}</div></div>`).join('')}</div></div></div>`;
 }
+const MGEN = {января: 'январь', февраля: 'февраль', марта: 'март', апреля: 'апрель', мая: 'май', июня: 'июнь', июля: 'июль', августа: 'август', сентября: 'сентябрь', октября: 'октябрь', ноября: 'ноябрь', декабря: 'декабрь'};
+const nh = h => String(h).replace('.', ',');
+// строка-описание ТО из плана: «(до 07.02.2027 или 37 176 км — что раньше; прогноз ≈ начало февраля 2027)» -> срок, прогноз, прочее
+function svcMeta(name) { const rest = String(name || '').replace(/^ТО-[\d\s ]+км\s*/, '').replace(/^\((.*)\)$/, '$1').trim();
+  const r = {due: '', fc: '', extra: [], rest};
+  const d = rest.match(/(?:^|\s)до\s+(\d{2}\.\d{2}\.\d{4}|\d{2}\.\d{4})/); if (d) r.due = 'до ' + d[1];
+  rest.split(/\s*;\s*/).forEach(x => { const f = x.match(/^прогноз\s*≈?\s*(.*)$/i);
+    if (f) { r.fc = '≈ ' + f[1].replace(/^(начало|середина|конец)\s+/i, '').replace(/[а-я]+/gi, w => MGEN[w.toLowerCase()] || w); return; }
+    if (d && x.includes(d[0].trim())) return; if (d) r.extra.push(x); });
+  return r; }
+// название запчасти без артикула; если в скобках бренд — берём его
+function partName(p) { let n = String(p.name || ''); const codes = String(p.oem || '').split(/[\s()\/,]+/).filter(t => t.length >= 6 && /\d/.test(t));
+  codes.forEach(t => n = n.split(t).join(' ')); n = n.replace(/\s*\([^()\s]*\d[^()\s]*\)\s*$/, '').replace(/\(\s*\)/g, '').replace(/\s{2,}/g, ' ').trim();
+  const b = n.match(/\(([^()]*[A-Za-zА-Яа-я]{3,}\s[^()]*)\)\s*$/); if (b && /[A-Za-z]{3,}/.test(b[1])) n = b[1].trim();
+  return n || String(p.name || ''); }
 function svcBlock(s, open, c) {
-  const due = s.km - c.cur;
-  return `<details class="svc glass"${open ? ' open' : ''}><summary><div style="flex:1"><div class="km">ТО ${km(s.km)}${due <= 0 ? '<span class="tag">пора</span>' : ''}</div>
-  <div class="muted">${esc(s.name.replace(/^ТО-[\d\s ]+км\s*/, ''))}</div><div class="muted">${due > 0 ? 'через ' + km(due) : 'просрочено на ' + km(-due)}</div></div>
-  <div style="text-align:right"><div style="font-weight:750">${rub(s.totalOem)}</div><div class="muted">аналог ${rub(s.totalAnalog)}</div></div><span class="chev">${ic('chev')}</span></summary>
-  ${s.works.map(w => `<div class="work"><div class="wh"><div>${esc(w.name)}${w.optional ? '<span class="tag">опция</span>' : ''}</div><span>${w.hours ? w.hours + ' н/ч · ' : ''}${rub(w.labor)}</span></div>
-    ${w.parts.map(p => `<div class="part"><b>${esc(p.name)}</b><div class="m"><em>Кол-во</em><span>${esc(p.qty ?? '—')}</span><em>Артикул</em><span>${esc(p.oem ?? '—')}</span><em>Аналог</em><span>${esc(p.analog ?? '—')}</span>
-      <em>Цена</em><span>ориг. ${rub(p.priceOem)} · аналог ${rub(p.priceAnalog)}</span>${p.note ? `<em>Прим.</em><span>${esc(p.note)}</span>` : ''}</div></div>`).join('')}</div>`).join('')}
+  const due = s.km - c.cur, M = svcMeta(s.name), left = due > 0 ? 'через ' + km(due) : 'просрочено на ' + km(-due);
+  return `<details class="svc glass"${open ? ' open' : ''}><summary><div style="flex:1;min-width:0"><div class="km">ТО ${km(s.km)}${due <= 0 ? '<span class="tag">пора</span>' : ''}</div>
+  <div class="sl">${M.due ? esc(M.due) + ' · ' + left : (M.rest && !M.fc ? esc(M.rest) + ' · ' : '') + left}</div>${M.fc || M.extra.length ? `<div>${M.fc ? `<span class="fcp">${esc(M.fc)}</span>` : ''}${M.extra.map(x => `<span class="fcp">${esc(x)}</span>`).join('')}</div>` : ''}</div>
+  <div class="stot"><b>${rub(s.totalOem)}</b><small>аналог ${rub(s.totalAnalog)}</small></div><span class="chev">${ic('chev')}</span></summary>
+  ${s.works.map(w => `<details class="wk"><summary><div class="wn">${esc(w.name)}${w.optional ? '<span class="tag">опция</span>' : ''}</div><div class="wp">${w.hours ? nh(w.hours) + ' н/ч · ' : ''}${rub(w.labor)}</div><span class="chev">${ic('chev')}</span></summary>
+    <div class="wb">${w.parts.length ? w.parts.map(p => { const pn = partName(p);
+      return `<details class="pt"><summary><div class="pn"><b>${esc(pn)}</b><small>${[p.qty != null && p.qty !== '' ? esc(p.qty) : '', 'ориг. ' + rub(p.priceOem), 'аналог ' + rub(p.priceAnalog)].filter(Boolean).join(' · ')}</small></div><span class="chev">${ic('chev')}</span></summary>
+      <div class="m">${pn !== p.name ? `<em>Название</em><span>${esc(p.name)}</span>` : ''}<em>Артикул</em><code>${esc(p.oem ?? '—')}</code><em>Аналог</em><span>${esc(p.analog ?? '—')}</span>${p.note ? `<em>Прим.</em><span>${esc(p.note)}</span>` : ''}</div></details>`; }).join('') : `<div class="muted" style="font-size:13px">Без запчастей</div>`}</div></details>`).join('')}
   <div class="tot"><span class="h"></span><span class="h">Оригинал</span><span class="h">Аналог</span>
    <span>Работы</span><span>${rub(s.labor)}</span><span>${rub(s.labor)}</span>
    <span>Запчасти</span><span>${rub(s.partsOem)}</span><span>${rub(s.partsAnalog)}</span>
    <span class="sum">Итого</span><span class="sum">${rub(s.totalOem)}</span><span class="sum s-amb">${rub(s.totalAnalog)}</span></div>
-  ${s.totalNote ? `<div class="muted" style="padding:0 16px 14px">${esc(s.totalNote)}</div>` : ''}</details>`;
+  ${s.totalNote ? `<div class="muted" style="padding:0 16px 14px;font-size:13px">${esc(s.totalNote)}</div>` : ''}</details>`;
 }
+// Шапка «План ТО»: свободный текст плана (title/note из листа 📋) раскладывается на поля; что не распозналось — в «Подробнее» как есть
+function splitTop(t) { const out = []; let d = 0, cur = '';
+  for (let i = 0; i < t.length; i++) { const ch = t[i]; if ('(«'.includes(ch)) d++; else if (')»'.includes(ch)) d = Math.max(0, d - 1);
+    if (d === 0 && (ch === ';' || (ch === ',' && t[i + 1] === ' ' && !/\d/.test(t[i + 2] || '')))) { out.push(cur); cur = ''; } else cur += ch; }
+  out.push(cur); return out.map(x => x.trim()).filter(Boolean); }
+const cap = t => t ? t[0].toUpperCase() + t.slice(1) : t;
+function longRow(x) { const m = x.match(/^(.*?)\s([~≈]?\d[\d\s ]*(?:км|лет|года?|мес)?(?:\s*\/\s*\d[\d\s ]*(?:км|лет|года?|мес))?)\s*(\([^)]*\))?$/);
+  if (!m || !m[1].trim()) return [cap(x), '', ''];
+  let v = m[2].trim().replace(/\s*\/\s*/g, ' / '); if (/^[~≈]?[\d\s ]+$/.test(v)) v += ' км';
+  return [cap(m[1].trim().replace(/(\p{L})\/(\p{L})/gu, '$1 и $2')), v, (m[3] || '').replace(/[()]/g, '')]; }
+function parsePlan(plan, c) {
+  const r = {title: '', engine: '', reg: '', regFull: '', last: '', long: [], src: [], notes: [], raw: String(plan.note || '')};
+  let t = String(plan.title || '').replace(/\s*[—–-]\s*план ТО\s*$/i, '');
+  const m = t.match(/^(.*?)\s*\((.*)\)\s*$/); if (m) { t = m[1]; const e = m[2].split(/,\s+/).map(x => x.trim()).filter(Boolean); r.engine = [...e.filter(x => !/л\.\s?с\./.test(x)), ...e.filter(x => /л\.\s?с\./.test(x))].join(' · '); }
+  const sh = short(c.name); r.title = sh !== c.name && t.startsWith(c.name) && c.name.includes(sh) ? sh + t.slice(c.name.length) : t;
+  const sent = r.raw.split(/(?<=[^\s.]{2}[.)»]?)\.\s+(?=[А-ЯЁA-Z«])/).map(x => x.trim().replace(/\.$/, '')).filter(Boolean);
+  sent.forEach((x, i) => { let k;
+    if ((k = x.match(/^Источник(?:и)?:\s*(.*)$/i))) { r.src.push(...k[1].split(/\s*;\s*/).filter(Boolean)); return; }
+    if ((k = x.match(/^Длинные(?: позиции| интервалы)?:\s*(.*)$/i))) { r.long.push(...splitTop(k[1]).map(longRow)); return; }
+    if ((k = x.match(/^Последнее ТО\s*(.*)$/i))) { let v = k[1]; const cp = v.match(/,\s*текущий пробег\s*[\d\s ]+(?:км)?/i); if (cp) v = v.replace(cp[0], '');
+      const pm = v.match(/^(.*?)\s*\((.*)\)\s*$/); if (pm) { v = pm[1]; r.notes.push('Последнее ТО: ' + pm[2]); }
+      r.last = v.replace(/\s+на\s+/, ' · '); return; }
+    if (!r.reg && i === 0 && /\d/.test(x) && /(мес|км)/.test(x)) { let v = x.replace(/\([^)]*\)/g, '').split(',')[0]; v = v.slice(Math.max(0, v.search(/\d/))).trim();
+      r.reg = v; if (x.replace(/^Регламент\s*/i, '').replace(/^РФ:\s*/, '').trim() !== v) r.notes.unshift('Регламент: ' + x.replace(/^Регламент\s*/i, '')); return; }
+    r.notes.push(x); });
+  if (!r.reg && !r.last && !r.long.length && !r.src.length) r.notes = r.raw ? [r.raw] : [];
+  return r; }
+const srcLbl = u => { try { return new URL(u).hostname.replace(/^(www|secure|m)\./, ''); } catch (e) { return u; } };
+function toHead(c) { const P = c.plan ? parsePlan(c.plan, c) : null, raw = c.raw;
+  const lastD = raw['Посл. ТО: дата'] ? fd(pd(raw['Посл. ТО: дата'])) : '', lastV = P && P.last ? P.last : [lastD, c.lastTO ? km(c.lastTO) : ''].filter(Boolean).join(' · ') || '—';
+  const iv = P && P.reg ? P.reg : [raw['Интервал ТО, мес'] ? raw['Интервал ТО, мес'] + ' мес' : '', c.interval ? km(c.interval) : ''].filter(Boolean).join(' / ');
+  const facts = [['Интервал', iv || '—'], ['Последнее ТО', lastV], ['Пробег', km(c.cur)]];
+  const more = P && (P.long.length || P.src.length || P.notes.length) ? `<details class="more tom"><summary><span class="sh">Подробнее</span><span class="hd">Скрыть</span></summary><div class="mb2">
+    ${P.long.length ? `<h4>Длинные интервалы</h4><div>${P.long.map(([n, v, h]) => `<div class="kr"${h ? ` title="${esc(h)}"` : ''}><span>${esc(n)}</span><b>${esc(v)}</b></div>`).join('')}</div>` : ''}
+    ${P.notes.length ? `<h4>Примечания</h4><ul class="bl">${P.notes.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+    ${P.src.length ? `<h4>Источники</h4><div class="srcs">${P.src.map(x => /^https?:\/\//.test(x) ? `<a href="${esc(x)}" target="_blank" rel="noopener noreferrer" title="${esc(x)}">${esc(srcLbl(x))}</a>` : `<span>${esc(x)}</span>`).join('')}</div>` : ''}</div></details>` : '';
+  return `<div class="glass card" style="margin:10px 0 14px"><div class="toh">${ring(c.left, c.interval, stK(c.left), fmt(c.left), 'км до ТО')}
+  <div style="min-width:0"><div class="tt">${esc(P ? P.title : c.name)}</div>${P && P.engine ? `<div class="ts">${esc(P.engine)}</div>` : ''}</div></div>
+  <div class="kvr">${facts.map(([k, v]) => `<div class="kr"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div>${more}</div>`; }
 function planBlock(c, onlyNext) {
   const list = c.plan.services.filter(s => s.km >= c.next - 1) .concat([]);
   const show = onlyNext ? list.slice(0, 1) : (list.length ? list : c.plan.services);
@@ -558,10 +628,9 @@ function planBlock(c, onlyNext) {
 }
 function vTO() {
   const c = cars().find(x => x.name === state.toCar);
-  return head('План ТО', 'Работы, запчасти и стоимость с учётом работ') +
+  return head('План ТО', 'Работы и запчасти') +
   `<div class="chips">${cars().map(x => `<span class="chip ${x.name === c.name ? 'on' : ''}" data-tocar="${esc(x.name)}">${esc(short(x.name))}</span>`).join('')}</div>
-  <div class="glass card" style="margin:10px 0 14px"><div style="display:flex;gap:16px;align-items:center">${ring(c.left, c.interval, stK(c.left), fmt(c.left), 'км до ТО')}
-  <div><div style="font-weight:700">${esc(c.plan ? c.plan.title : c.name)}</div><div class="muted" style="margin-top:4px">${esc(c.plan ? c.plan.note : '')}</div></div></div></div>
+  ${toHead(c)}
   <div class="grid g2" style="align-items:start">${c.plan ? planBlock(c, false) : '<div class="glass card muted">Нет плана</div>'}</div>
   <h2>Расценки</h2><div class="glass">${DATA.rates.map(r => `<div class="row"><div class="l">${esc(r['Параметр'])}<small>${esc(r['Источник / комментарий'] || '')}</small></div><div class="r">${typeof r['Значение'] === 'number' ? rub(r['Значение']) : esc(r['Значение'])}</div></div>`).join('')}</div>`;
 }
@@ -612,7 +681,11 @@ function vBud() {
   <div style="margin:14px 0">${`<div class="act glass am" data-act="expense" style="flex-direction:row;justify-content:center"><div class="ic" style="width:32px;height:32px">${ic('plus', 18)}</div>Добавить расход</div>`}</div>
   <div id="budlist">${!list.length ? `<div class="glass card muted">Здесь пока пусто</div>` : tab.months ? budMonths(list) : `<div class="glass">${list.map(([x, i]) => tab.id === 'bought' ? budRowBought(x, i) : budRow(x, i)).join('')}</div>`}</div>`;
 }
-function render() {
+function tabH() { const n = document.querySelector('nav.bottom'), cs = n && getComputedStyle(n);
+  const h = n && cs.display !== 'none' ? Math.max(0, innerHeight - n.getBoundingClientRect().top) : 0;
+  document.documentElement.style.setProperty('--tabh', h ? h + 'px' : '24px'); }
+addEventListener('resize', () => tabH());
+function render() { setTimeout(tabH, 0);
   nav();
   if (!DATA || !DATA.cars) { $('#main').innerHTML = `<div class="view"><header class="top"><div><h1>Гараж</h1><div class="sub">Нет данных на этом устройстве</div></div><div class="hbtns">${syncBadge()}</div></header><div class="glass card"><p style="margin:0 0 14px">Подключите синхронизацию с GitHub: нажмите кнопку и введите ключ доступа. Данные загрузятся автоматически.</p>${NET.err ? `<p class="s-red" style="margin:0 0 14px;font-weight:600">Ошибка: ${esc(NET.err)}</p>` : ''}<p class="muted" style="margin:0 0 14px">Заводите свой гараж? В окне подключения впишите свой репозиторий (логин/название) и свой ключ.</p><div style="display:flex;gap:10px"><button class="btn" data-act="srv" style="flex:2">Подключить</button><button class="btn sec" data-act="diag" style="flex:1">Диагностика</button></div></div></div>`; return; }
   if (OWN && !DATA.cars.length) { $('#main').innerHTML = `<div class="view"><header class="top"><div><h1>Мой гараж</h1><div class="sub">${srvOn() ? 'Репозиторий ' + esc(SRV.repo) : 'Синхронизация не подключена'}</div></div><div class="hbtns">${syncBadge()}</div></header><div class="glass card"><p style="margin:0 0 14px">Машин пока нет. Добавьте первую — данные сохранятся в вашем закрытом репозитории GitHub.</p>${NET.state === 'err' ? `<p class="s-red" style="margin:0 0 14px;font-weight:600">Ошибка синхронизации: ${esc(NET.err)} <a data-act="diag" style="text-decoration:underline;cursor:pointer">Диагностика</a></p>` : ''}${addCarBtn()}</div></div>`; return; }
