@@ -146,7 +146,13 @@ details[open] .chev{transform:rotate(90deg)}
 .tag.new{background:rgba(61,123,255,.18);color:var(--blue)}
 .row{display:flex;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px}
 .bic{width:44px;height:44px;flex:0 0 44px;border-radius:50%;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}.bic.ok{border:1.5px solid var(--green);color:var(--green)}.bic.ed{border:0;color:var(--tx2);font-size:16px;line-height:1;width:44px;flex-basis:44px;margin-left:-6px}.bic.ed:active{color:var(--blue);background:rgba(127,127,127,.14)}.pr.flash{animation:prf 1s ease}@keyframes prf{0%,40%{background:rgba(90,160,255,.30)}100%{background:transparent}}.bic.del{border:1.5px solid var(--tx2);color:var(--tx2);opacity:.8}.bsw{touch-action:pan-y;transition:transform .2s}.pr{min-height:44px;min-width:64px;display:flex;flex-direction:column;justify-content:center;align-items:flex-end;cursor:pointer;border-radius:10px;padding:0 6px;border-bottom:1px dashed transparent}.pr:hover{background:rgba(127,127,127,.12)}.pin{width:110px;height:44px;font-size:16px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;border-radius:10px;padding:0 10px;border:1px solid var(--blue);background:var(--glass);outline:none}
-.snack{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translate(-50%,200%);visibility:hidden;opacity:0;pointer-events:none;z-index:61;display:flex;gap:16px;align-items:center;padding:12px 16px;border-radius:16px;font-size:14px;font-weight:600;transition:transform .3s}.snack.on{transform:translate(-50%,0);visibility:visible;opacity:1;pointer-events:auto}.snack a{color:var(--blue);cursor:pointer}
+.seg{display:flex;width:100%;height:36px;padding:2px;gap:2px;border-radius:10px;background:rgba(127,127,127,.16);margin:0 0 14px;box-sizing:border-box}.seg button{flex:1 1 auto;min-width:0;border:0;border-radius:8px;background:transparent;color:var(--tx2);font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums;touch-action:manipulation}@media(max-width:400px){.seg button{font-size:12px;padding:0 4px;letter-spacing:-.1px}}.seg button.on{background:#fff;color:#0b1220;box-shadow:0 1px 4px rgba(0,0,0,.14)}[data-theme=dark] .seg button.on{background:rgba(255,255,255,.88);color:#0b1220}
+.mstrip{display:flex;align-items:flex-end;gap:6px;height:64px;margin:0 0 6px;overflow-x:auto;scrollbar-width:none}.mstrip::-webkit-scrollbar{display:none}.mstrip .mb{flex:1 0 34px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;cursor:pointer;border:0;background:transparent;padding:0;color:var(--tx2);font:inherit;touch-action:manipulation}.mstrip .mb i{display:block;width:100%;max-width:44px;border-radius:6px 6px 3px 3px;background:var(--amber);min-height:4px}.mstrip .mb.nd i{background:transparent;border:1.5px dashed var(--tx3)}.mstrip .mb span{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;line-height:1}
+.mtot{display:flex;justify-content:space-between;align-items:baseline;margin:0 4px 10px;font-size:13px;color:var(--tx2)}.mtot b{font-size:15px;font-weight:600;color:var(--tx);font-variant-numeric:tabular-nums}
+.mgrp{margin:0 0 12px}.mgrp .mh{position:sticky;top:env(safe-area-inset-top);z-index:5;display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:9px 12px;margin:0 0 6px;border-radius:12px;background:var(--bg);border:1px solid transparent;scroll-margin-top:8px}.mgrp .mh span{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--tx2);font-weight:600}.mgrp .mh b{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}.mgrp.nd .mh{border:1.5px dashed var(--tx3)}
+.row.bok .ck{flex:0 0 16px;width:16px;height:16px;color:var(--green);margin-top:2px}.row.bok .l{flex:1}.row.bok{justify-content:flex-start}.row.bok .r{margin-left:auto;display:flex;align-items:center;gap:8px}.row.bok .zn{width:16px;height:16px;color:var(--tx2);flex:none}
+.row.gone{overflow:hidden;transition:height .2s ease,padding .2s ease,opacity .2s ease;opacity:0;padding-top:0!important;padding-bottom:0!important}
+.snack{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translate(-50%,200%);visibility:hidden;opacity:0;pointer-events:none;z-index:61;display:flex;gap:16px;align-items:center;padding:12px 16px;border-radius:16px;font-size:14px;font-weight:600;transition:transform .3s}.snack.on{transform:translate(-50%,0);visibility:visible;opacity:1;pointer-events:auto}.snack a{color:var(--blue);cursor:pointer}#snackt{white-space:nowrap}
 .row:last-child{border-bottom:0}.row .l{min-width:0}.row .l small{display:block;color:var(--tx2);font-size:12.5px;margin-top:2px}
 .row .r{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:600}
 .muted{color:var(--tx2);font-size:13px}
@@ -256,7 +262,7 @@ const I = {
   moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/>', chev:'<path d="M9 6l6 6-6 6"/>', left:'<path d="M15 6l-6 6 6 6"/>',
   cloud:'<path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19.5 10 4 4 0 0 1 18 18z"/>', help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/>',
   gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
-  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>', trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>', clip:'<path d="M20 11.5l-8.2 8.2a5 5 0 0 1-7.1-7.1l8.6-8.6a3.4 3.4 0 0 1 4.8 4.8l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/>', ckc:'<circle cx="12" cy="12" r="10" style="fill:currentColor;stroke:none"/><path d="M7 12.5l3.3 3.3L17 9" style="stroke:#fff;stroke-width:2.4"/>', trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
   doc:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>'
 };
 const ic = (n, s) => `<svg class="i" viewBox="0 0 24 24"${s ? ` style="width:${s}px;height:${s}px"` : ''}>${I[n]}</svg>`;
@@ -358,14 +364,18 @@ function budDel(i) { const x = BROWS[i]; if (!x) return;
 function budOp(x, op, extra) {
   let undo;
   if (x.local) { const j = CH.budget.findIndex(b => b.id === x.id); if (j >= 0) { const prev = {...CH.budget[j]};
-    if (op === 'del') { CH.budget.splice(j, 1); undo = () => CH.budget.splice(j, 0, prev); } else Object.assign(CH.budget[j], {fact: extra.fact, due: fdRu(extra.date), status: 'Факт', note: [prev.note, 'план был ' + (prev.plan ?? '')].filter(Boolean).join('; '), plan: null}); } }
+    if (op === 'del') { CH.budget.splice(j, 1); undo = () => CH.budget.splice(j, 0, prev); } else { Object.assign(CH.budget[j], {fact: extra.fact, due: fdRu(extra.date), status: 'Факт', note: [prev.note, 'план был ' + (prev.plan ?? '')].filter(Boolean).join('; '), plan: null}); undo = () => { CH.budget[j] = prev; }; } } }
   else { const o = {op, car: x.car, item: x.item, plan: x.plan ?? null, ...(extra || {}), id: uid(), ts: new Date().toISOString()}; CH.budget.push(o);
     undo = () => { CH.budget = CH.budget.filter(b => b !== o); SY.sent = (SY.sent || []).filter(k => k !== o.id); saveSY(); }; }
-  save(); markDirty(); close(); render();
-  if (op === 'del') { clearTimeout(budOp.t); budOp.undo = undo; $('#snackt').textContent = 'Удалено из плана'; $('#snack').classList.add('on');
-    budOp.t = setTimeout(() => { $('#snack').classList.remove('on'); budOp.undo = null; if (srvOn()) srvSync(); }, 4000); }
-  else { toast('Отмечено как исполнено'); if (srvOn()) setTimeout(() => srvSync(), 300); } }
-function budUndo() { clearTimeout(budOp.t); $('#snack').classList.remove('on'); if (budOp.undo) { const pr = $('#snackt').textContent === 'Цена изменена'; budOp.undo(); budOp.undo = null; save(); render(); toast(pr ? 'Цена возвращена' : 'Удаление отменено'); } }
+  save(); markDirty(); close();
+  const snack = t => { clearTimeout(budOp.t); budOp.undo = undo; $('#snackt').textContent = t; $('#snack').classList.add('on');
+    budOp.t = setTimeout(() => { $('#snack').classList.remove('on'); budOp.undo = null; if (srvOn()) srvSync(); }, 4000); };
+  if (op === 'del') { render(); snack('Удалено из плана'); }
+  else { budCollapse(x, () => render()); snack('Перенесено в Куплено'); } }
+function budCollapse(x, then) { const i = BROWS.indexOf(x), el = i >= 0 && state.tab === 'bud' ? document.querySelector(`#budlist .row[data-i="${i}"]`) : null;
+  if (!el) return then(); el.style.height = el.offsetHeight + 'px'; el.offsetHeight; el.classList.add('gone'); el.style.height = '0px';
+  let fin = false; const f = () => { if (fin) return; fin = true; then(); }; el.addEventListener('transitionend', f, {once: true}); setTimeout(f, 260); }
+function budUndo() { clearTimeout(budOp.t); $('#snack').classList.remove('on'); if (budOp.undo) { const st = $('#snackt').textContent; budOp.undo(); budOp.undo = null; save(); render(); toast(st === 'Цена изменена' ? 'Цена возвращена' : st === 'Перенесено в Куплено' ? 'Возвращено в «Планируется»' : 'Удаление отменено'); } }
 (() => { let sx, sy, el; document.addEventListener('touchstart', e => { el = e.target.closest('.bsw'); if (!el) return; sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, {passive: true});
   document.addEventListener('touchmove', e => { if (!el) return; const dx = e.touches[0].clientX - sx; if (Math.abs(dx) > Math.abs(e.touches[0].clientY - sy)) el.style.transform = `translateX(${Math.max(-90, Math.min(90, dx))}px)`; }, {passive: true});
   document.addEventListener('touchend', e => { if (!el) return; const dx = e.changedTouches[0].clientX - sx, i = +el.dataset.i; el.style.transform = ''; el = null;
@@ -562,12 +572,45 @@ function vIns() {
     <div class="bar"><i data-w="${Math.max(2, Math.min(100, (1 - d / tot) * 100))}" style="background:linear-gradient(90deg,var(--blue),${COL[st]})"></i></div>
     <dl class="kv" style="margin-top:14px"><dt>Период</dt><dd>${fd(p.from)} — ${fd(p.to)}</dd><dt>Стоимость</dt><dd>${rub(p.cost)}</dd></dl>${p.note ? `<div class="muted" style="margin-top:10px">${esc(p.note)}</div>` : ''}</div>`; }).join('')}</div>`;
 }
+// Вкладки бюджета. Третья (или любая новая) вкладка = ещё одна строка в BUD_TABS: id, название, какие позиции, какая сумма.
+const BUD_TABS = [
+  {id: 'plan', name: 'Планируется', has: x => !x.bought, sum: x => +x.plan || 0, months: true},
+  {id: 'bought', name: 'Куплено', has: x => x.bought, sum: x => +x.fact || +x.znCost || 0},
+];
+const MON = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+const nrmW = t => String(t || '').toLowerCase().replace(/ё/g, 'е').replace(/[«»"'()\[\],.;:!?]/g, ' ').split(/\s+/).filter(w => w.length > 2);
+// месяц плановой позиции: как у Финансиста — поле month в car_costs.json (DATA.costs); если позиции там нет — из её «Срока»; иначе «Без даты»
+function budMonth(x) { const cs = (DATA.costs || []).filter(c => c.status !== 'fact' && fullCar(c.car) === x.car);
+  const a = nrmW(x.item); let best = null, bs = 0;
+  cs.forEach(c => { const b = nrmW(c.item); if (!a.length || !b.length) return; const k = b.filter(w => a.some(v => v === w || (w.length > 3 && v.includes(w)) || (v.length > 3 && w.includes(v)))).length / Math.min(a.length, b.length); if (k > bs) { bs = k; best = c; } });
+  if (best && bs >= .5) return /^\d{4}-\d{2}$/.test(best.month || '') ? best.month : null;
+  const m = String(x.due || '').match(/(?:^|\D)(\d{1,2})\.(\d{4})\s*$/); return m ? `${m[2]}-${m[1].padStart(2, '0')}` : null; }
+const isoDue = t => { const m = String(t || '').match(/(\d{2})\.(\d{2})\.(\d{4})/); return m ? `${m[3]}-${m[2]}-${m[1]}` : ''; };
+// заказ-наряд: запись журнала ТО той же машины с документом-нарядом/актом или фото, совпадающая по дате или по сумме
+function budZN(x) { const svc = (DATA.service || []).filter(s => s['Машина'] === x.car && (s['Фото'] || /наряд|ЗН\s|акт/i.test(String(s['Документ / заказ-наряд'] || ''))));
+  const d = isoDue(x.due), fact = +x.fact;
+  if (fact) return svc.find(s => s['Дата'] === d || +s['Стоимость, ₽'] === fact) || (/заказ-наряд|акт\s*№/i.test(String(x.note || '') + ' ' + x.item) ? {} : null);
+  const a = nrmW(x.item);   // плановая позиция без факта: только та же дата и (та же сумма или те же работы)
+  return svc.find(s => d && s['Дата'] === d && ((+x.plan && +s['Стоимость, ₽'] === +x.plan) || nrmW(s['Что сделано / заменено']).some(w => a.includes(w)))) || null; }
+const monLbl = m => m ? `${MON[+m.slice(5) - 1]} ${m.slice(0, 4)}` : 'Без даты';
+function budRow(x, i) { return `<div class="row${isPlanned(x) && !x.bought ? ' bsw' : ''}" data-i="${i}"><div class="l"><b>${esc(x.item)}</b>${x.local ? '<span class="tag new">новое</span>' : ''}${x.pend ? '<span class="tag new">отправлено</span>' : ''}<small>${esc(short(x.car))}${x.due ? ' · ' + esc(x.due) : ''}${x.note ? ' · ' + esc(x.note) : ''}</small></div><div class="r" style="display:flex;align-items:center;gap:8px"><div class="pr" data-act="budprice" data-i="${i}" role="button" tabindex="0" title="Изменить цену" style="text-align:right">${+x.fact ? `${x.was ? `<small class="muted" style="display:block;text-decoration:line-through">${rub(x.was)}</small>` : ''}<span class="s-grn">${rub(x.fact)}</span>` : x.plan ? rub(x.plan) : '<span class="muted">сумма?</span>'}</div><button class="bic ed" data-act="budpen" data-i="${i}" aria-label="Изменить цену" title="Изменить цену">✎</button>${isPlanned(x) ? `<button class="bic ok" data-act="buddone" data-i="${i}" aria-label="Исполнено (куплено)" title="Исполнено (куплено)">${ic('check', 18)}</button><button class="bic del" data-act="buddel" data-i="${i}" aria-label="Удалить" title="Удалить">${ic('trash', 18)}</button>` : ''}</div></div>`; }
+function budRowBought(x, i) { const v = +x.fact || +x.znCost || 0;
+  return `<div class="row bok" data-i="${i}"><span class="ck">${ic('ckc', 16)}</span><div class="l"><b>${esc(x.item)}</b>${x.pend ? '<span class="tag new">отправлено</span>' : ''}<small>${esc(short(x.car))}${x.due ? ' · ' + esc(x.due) : ''}${x.note ? ' · ' + esc(x.note) : ''}</small></div><div class="r"><div class="pr" data-act="budprice" data-i="${i}" role="button" tabindex="0" title="Изменить цену">${x.was && +x.was !== v ? `<small class="muted" style="display:block;text-decoration:line-through">${rub(x.was)}</small>` : ''}<span class="s-grn">${v ? rub(v) : '<span class="muted">сумма?</span>'}</span></div>${x.zn ? `<span class="zn" title="Прикреплён заказ-наряд" aria-label="Прикреплён заказ-наряд">${ic('clip', 16)}</span>` : ''}</div></div>`; }
+function budMonths(list) { const g = {}; list.forEach(([x, i]) => { const k = x.month || ''; (g[k] = g[k] || []).push([x, i]); });
+  const keys = Object.keys(g).filter(Boolean).sort().concat(g[''] ? [''] : []), sums = Object.fromEntries(keys.map(k => [k, g[k].reduce((a, [x]) => a + (+x.plan || 0), 0)]));
+  const mx = Math.max(1, ...Object.values(sums)), tot = Object.values(sums).reduce((a, v) => a + v, 0);
+  return `<div class="mtot"><span>Примерный бюджет по месяцам</span><b>${rub(tot)}</b></div>
+  <div class="mstrip" role="list">${keys.map((k, n) => `<button class="mb${k ? '' : ' nd'}" data-act="budmon" data-m="${n}" title="${monLbl(k)} · ${rub(sums[k])}" aria-label="${monLbl(k)} · ${rub(sums[k])}"><i style="height:${Math.max(4, Math.round(sums[k] / mx * 44))}px"></i><span>${k ? MON[+k.slice(5) - 1].slice(0, 3) + (k.slice(0, 4) !== String(new Date().getFullYear()) ? '’' + k.slice(2, 4) : '') : 'б/д'}</span></button>`).join('')}</div>
+  ${keys.map((k, n) => `<div class="mgrp${k ? '' : ' nd'}" id="bm${n}"><div class="mh"><span>${monLbl(k)}</span><b>${rub(sums[k])}</b></div><div class="glass">${g[k].map(([x, i]) => budRow(x, i)).join('')}</div></div>`).join('')}`; }
 function vBud() {
-  const b = budget(), tot = b.reduce((s, x) => s + (+x.plan || 0), 0), fact = b.reduce((s, x) => s + (+x.fact || 0), 0);
-  const by = {}; b.forEach(x => by[x.car] = (by[x.car] || 0) + (+x.plan || 0));
-  return head('Бюджет', 'Плановые расходы на авто') + `<div class="glass card"><div class="muted">Всего по плану</div><div class="big">${rub(Object.values(planBy()).reduce((a, x) => a + x, 0))}</div><div class="muted">Потрачено: <b class="s-amb">${rub(Object.values(spent()).reduce((a, x) => a + x, 0))}</b></div>${budChart()}</div>
+  const b = budget();
+  b.forEach(x => { x.zn = budZN(x); x.znCost = x.zn && +x.zn['Стоимость, ₽'] || 0; x.bought = !isPlanned(x) || !!x.zn; x.month = x.bought ? null : budMonth(x); });
+  BROWS = b; const tab = BUD_TABS.find(t => t.id === state.budTab) || BUD_TABS[0];
+  const list = b.map((x, i) => [x, i]).filter(([x]) => tab.has(x)), sum = t => b.filter(t.has).reduce((a, x) => a + t.sum(x), 0);
+  return head('Бюджет', 'Плановые расходы на авто') + `<div class="seg" role="tablist">${BUD_TABS.map(t => `<button role="tab" aria-selected="${t === tab}" class="${t === tab ? 'on' : ''}" data-act="budtab" data-t="${t.id}">${t.name} · ${rub(sum(t))}</button>`).join('')}</div>
+  <div class="glass card"><div class="muted">Всего по плану</div><div class="big">${rub(Object.values(planBy()).reduce((a, x) => a + x, 0))}</div><div class="muted">Потрачено: <b class="s-amb">${rub(Object.values(spent()).reduce((a, x) => a + x, 0))}</b></div>${budChart()}</div>
   <div style="margin:14px 0">${`<div class="act glass am" data-act="expense" style="flex-direction:row;justify-content:center"><div class="ic" style="width:32px;height:32px">${ic('plus', 18)}</div>Добавить расход</div>`}</div>
-  <div class="glass">${(BROWS = b).map((x, i) => `<div class="row${isPlanned(x) ? ' bsw' : ''}" data-i="${i}"><div class="l"><b>${esc(x.item)}</b>${x.local ? '<span class="tag new">новое</span>' : ''}${x.pend ? '<span class="tag new">отправлено</span>' : ''}<small>${esc(short(x.car))}${x.due ? ' · ' + esc(x.due) : ''}${x.note ? ' · ' + esc(x.note) : ''}</small></div><div class="r" style="display:flex;align-items:center;gap:8px"><div class="pr" data-act="budprice" data-i="${i}" role="button" tabindex="0" title="Изменить цену" style="text-align:right">${+x.fact ? `${x.was ? `<small class="muted" style="display:block;text-decoration:line-through">${rub(x.was)}</small>` : ''}<span class="s-grn">${rub(x.fact)}</span>` : x.plan ? rub(x.plan) : '<span class="muted">сумма?</span>'}</div><button class="bic ed" data-act="budpen" data-i="${i}" aria-label="Изменить цену" title="Изменить цену">✎</button>${isPlanned(x) ? `<button class="bic ok" data-act="buddone" data-i="${i}" aria-label="Исполнено (куплено)" title="Исполнено (куплено)">${ic('check', 18)}</button><button class="bic del" data-act="buddel" data-i="${i}" aria-label="Удалить" title="Удалить">${ic('trash', 18)}</button>` : ''}</div></div>`).join('')}</div>`;
+  <div id="budlist">${!list.length ? `<div class="glass card muted">Здесь пока пусто</div>` : tab.months ? budMonths(list) : `<div class="glass">${list.map(([x, i]) => tab.id === 'bought' ? budRowBought(x, i) : budRow(x, i)).join('')}</div>`}</div>`;
 }
 function render() {
   nav();
@@ -651,7 +694,7 @@ async function srvSync(manual) {
   if (!srvOn() || NET.busy) return; if (navigator.onLine === false) { NET.state = 'off'; render(); return; }
   NET.busy = true; NET.state = 'busy'; render();
   try { const s = sentSet();
-    for (const k of ['mileage', 'service', 'budget']) for (const x of CH[k]) { const id = keyOf(x); if (s.has(id) || (x.op === 'del' && Date.now() - Date.parse(x.ts) < 4500)) continue;
+    for (const k of ['mileage', 'service', 'budget']) for (const x of CH[k]) { const id = keyOf(x); if (s.has(id) || ((x.op === 'del' || x.op === 'done') && Date.now() - Date.parse(x.ts) < 4500)) continue;
       const body = JSON.stringify({kind: k, item: x}, null, 1);
       await gh(`changes/${fid(id)}.json`, {method: 'PUT', body: JSON.stringify({message: `app: ${k} ${x.car || ''}`.trim(), content: b64(body)})});
       s.add(id); SY.sent = [...s]; saveSY(); }
@@ -1015,6 +1058,8 @@ document.addEventListener('click', e => {
   else if (a === 'budpen') budPriceSheet(+t.dataset.i);
   else if (a === 'buddelok') budOp(BROWS[+t.dataset.i], 'del');
   else if (a === 'budundo') budUndo();
+  else if (a === 'budtab') { state.budTab = t.dataset.t; render(); }
+  else if (a === 'budmon') { const g = document.getElementById('bm' + t.dataset.m); if (g) g.scrollIntoView({behavior: 'smooth', block: 'start'}); }
   else if (a === 'carphoto') pickCarPhoto();
   else if (a === 'mkrepo') mkRepo();
   else if (a === 'diag') diag();
