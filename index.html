@@ -618,9 +618,9 @@ function engSub(eng, title) { const vols = (String(title).match(/\d[.,]\d/g) || 
   return String(eng || '').split(' · ').map(fuel).map(x => x.replace(/(^|\s)(\d[.,]\d)(?=\s|$)/g, (m, a, v) => vols.includes(v.replace(',', '.')) ? a : m).replace(/\s{2,}/g, ' ').trim()).filter(Boolean).join(' · '); }
 const srcLbl = u => { try { return new URL(u).hostname.replace(/^(www|secure|m)\./, ''); } catch (e) { return u; } };
 // Заголовок карточки машины в «План ТО»: колонка «Название в ТО» листа «Машины» (если появится) или эта настройка; иначе — из названия плана
-const TO_TITLE = {'Land Rover Defender': 'LR Defender 110 D250', 'Ford Bronco': 'Ford Bronco 2.3', 'Range Rover Sport': 'LR Range Rover Sport D350'};
+const TO_TITLE = {'Land Rover Defender': 'LR Defender 110 D250', 'Ford Bronco': 'Ford Bronco EB 2.3', 'Range Rover Sport': 'RR Sport D350'};
 // Подписи чипов выбора машины: колонка «Название (чип)» листа «Машины» (если появится) или эта настройка; иначе — короткое имя
-const CHIP_TITLE = {'Land Rover Defender': 'Defender D250', 'Ford Bronco': 'Bronco', 'Range Rover Sport': 'Range Rover Sport D350'};
+const CHIP_TITLE = {'Land Rover Defender': 'Defender D250', 'Ford Bronco': 'Bronco EB 2.3', 'Range Rover Sport': 'RR Sport D350'};
 const chipTitle = x => (x.raw && x.raw['Название (чип)']) || CHIP_TITLE[x.name] || short(x.name);
 const toTitle = (c, P) => c.raw['Название в ТО'] || TO_TITLE[c.name] || (P ? P.title : c.name);
 function toHead(c) { const P = c.plan ? parsePlan(c.plan, c) : null, raw = c.raw;
