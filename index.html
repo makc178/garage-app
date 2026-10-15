@@ -620,7 +620,7 @@ function engSub(eng, title) { const vols = (String(title).match(/\d[.,]\d/g) || 
 const hpOf = v => { const m = String(v || '').match(/(\d+(?:[.,]\d+)?)\s*л\.?\s*с/i); return m ? Math.round(parseFloat(m[1].replace(',', '.'))) : null; };
 function engLine(c, P) { const t = toTitle(c, P), e = engSub(P ? P.engine : '', t), hp = hpOf(c.raw && c.raw['Мощность']); return hp && !/л\.?\s*с/i.test(e) ? [e, hp + ' л.с.'].filter(Boolean).join(' · ') : e; }
 // цвет: фирменное название — колонка «Цвет производителя» листа «Машины», под ним серым цвет по СТС (колонка «Цвет»); оттенок кружка — COLOR_HEX по названию, иначе нейтрально-серый
-const COLOR_HEX = {'borasco grey': '#6B7075', 'cactus gray': '#8A9187', 'cactus grey': '#8A9187', 'gondwana stone': '#A89F8C'};
+const COLOR_HEX = {'borasco grey': '#6B7075', 'cactus gray': '#8A9187', 'cactus grey': '#8A9187', 'gondwana stone': '#8C7653'};
 const COLOR_NEUTRAL = '#8A8F96';
 function colorRow(c) { const r = c.raw || {}, br = String(r['Цвет производителя'] || '').trim(), sts = String(r['Цвет'] || '').trim(); if (!br && !sts) return '';
   const hx = (br && (r['Цвет HEX'] || COLOR_HEX[br.toLowerCase()])) || COLOR_NEUTRAL;
