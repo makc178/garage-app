@@ -608,7 +608,13 @@ function parsePlan(plan, c) {
       r.reg = v; if (x.replace(/^Регламент\s*/i, '').replace(/^РФ:\s*/, '').trim() !== v) r.notes.unshift('Регламент: ' + x.replace(/^Регламент\s*/i, '')); return; }
     r.notes.push(x); });
   if (!r.reg && !r.last && !r.long.length && !r.src.length) r.notes = r.raw ? [r.raw] : [];
+  const nn = t => { let v = String(t).replace(/^Регламент:?\s*/i, '').replace(/^[^\d:]{1,24}:\s*/, '').replace(/\s*\([^()\d]*\)/g, '').trim(); return v.slice(Math.max(0, v.search(/\d/))).replace(/\s+/g, ' ').trim(); };
+  if (r.reg) r.notes = r.notes.filter(x => nn(x) !== nn(r.reg));   // дубль строки «Интервал»
   return r; }
+// подзаголовок без объёма двигателя, если он уже есть в заголовке карточки («LR Defender 110 3.0» -> «дизель AJ20D6 · 249 л.с.»)
+function engSub(eng, title) { const vols = (String(title).match(/\d[.,]\d/g) || []).map(v => v.replace(',', '.'));
+  if (!vols.length) return eng;
+  return String(eng || '').split(' · ').map(x => x.replace(/(^|\s)(\d[.,]\d)(?=\s|$)/g, (m, a, v) => vols.includes(v.replace(',', '.')) ? a : m).replace(/\s{2,}/g, ' ').trim()).filter(Boolean).join(' · '); }
 const srcLbl = u => { try { return new URL(u).hostname.replace(/^(www|secure|m)\./, ''); } catch (e) { return u; } };
 // Заголовок карточки машины в «План ТО»: колонка «Название в ТО» листа «Машины» (если появится) или эта настройка; иначе — из названия плана
 const TO_TITLE = {'Land Rover Defender': 'LR Defender 110 3.0', 'Ford Bronco': 'Ford Bronco 2.3', 'Range Rover Sport': 'LR Range Rover Sport'};
@@ -622,7 +628,7 @@ function toHead(c) { const P = c.plan ? parsePlan(c.plan, c) : null, raw = c.raw
     ${P.notes.length ? `<h4>Примечания</h4><ul class="bl">${P.notes.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
     ${P.src.length ? `<h4>Источники</h4><div class="srcs">${P.src.map(x => /^https?:\/\//.test(x) ? `<a href="${esc(x)}" target="_blank" rel="noopener noreferrer" title="${esc(x)}">${esc(srcLbl(x))}</a>` : `<span>${esc(x)}</span>`).join('')}</div>` : ''}</div></details>` : '';
   return `<div class="glass card" style="margin:10px 0 14px"><div class="toh">${ring(c.left, c.interval, stK(c.left), fmt(c.left), 'км до ТО')}
-  <div style="min-width:0"><div class="tt">${esc(toTitle(c, P))}</div>${P && P.engine ? `<div class="ts">${esc(P.engine)}</div>` : ''}</div></div>
+  <div style="min-width:0"><div class="tt">${esc(toTitle(c, P))}</div>${P && engSub(P.engine, toTitle(c, P)) ? `<div class="ts">${esc(engSub(P.engine, toTitle(c, P)))}</div>` : ''}</div></div>
   <div class="kvr">${facts.map(([k, v]) => `<div class="kr"><span>${k}</span><b>${esc(v)}</b></div>`).join('')}</div>${more}</div>`; }
 function planBlock(c, onlyNext) {
   const list = c.plan.services.filter(s => s.km >= c.next - 1) .concat([]);
