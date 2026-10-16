@@ -1174,5 +1174,6 @@ theme(); render();
   if (srvOn()) VAULT.persist(); render(); srvSync(); })();
 </script>
 <script>if ('serviceWorker' in navigator && location.protocol === 'https:') { let rl = false; navigator.serviceWorker.addEventListener('controllerchange', () => { if (!rl) { rl = true; location.reload(); } });
-  navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => r.update()).catch(() => {}); }</script></body>
+  navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => r.update()).catch(() => {}); }</script><script src="updlog.js?v=17a4a5b5" defer></script>
+</body>
 </html>
