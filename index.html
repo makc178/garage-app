@@ -226,6 +226,7 @@ const VAULT = (() => { const DB = 'makc178-vault', ST = 'kv';
   const persist = () => { try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {} };
   return {get: k => get(k).catch(() => null), set: (k, v) => put(k, v).catch(() => false), persist}; })();
 let DATA = /*__DATA__*/null;
+const APPCFG = {"features": {"insurance_next_payment": false}};  // флаги из app/config.json → features
 /* режим «свой гараж»: репозиторий не makc178/garage-data -> база JSON только в репозитории пользователя, без бота */
 const OWNER_REPO = 'makc178/garage-data';
 const API = (() => { try { const a = localStorage.getItem('garage.api'); return a && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(a) ? a : 'https://api.github.com'; } catch (e) { return 'https://api.github.com'; } })();  // localhost — только для тестов
@@ -330,7 +331,7 @@ function model(c) {
   svc.sort((a, b) => (b.km || 0) - (a.km || 0));
   return {raw: c, name: n, plate: c['Госномер'], vin: c['VIN'], cur, next, left: next - cur, interval, lastTO, mil, svc, plan: DATA.plans[n], fc};
 }
-function insurance() { return DATA.insurance.map(p => ({car: p['Машина'], type: p['Тип'], co: p['Страховая'], num: p['Номер полиса'], from: pd(p['Начало']), to: pd(p['Окончание']), cost: p['Стоимость, ₽'], note: p['Примечание'], file: p['Полис (файл)']})); }
+function insurance() { return DATA.insurance.map(p => ({car: p['Машина'], type: p['Тип'], co: p['Страховая'], num: p['Номер полиса'], from: pd(p['Начало']), to: pd(p['Окончание']), cost: p['Стоимость, ₽'], note: p['Примечание'], file: p['Полис (файл)'], nextDate: pd(p['След. платёж: дата']), nextSum: p['След. платёж: сумма']})); }
 function budget() { const ops = CH.budget.filter(b => b.op === 'done' || b.op === 'del'), hit = new Set();
   const rows = [...DATA.budget.map(b => ({car: b['Машина'], item: b['Статья'], plan: b['План, ₽'], due: b['Срок'], fact: b['Факт, ₽'], status: b['Статус'], note: b['Комментарий']})),
                 ...CH.budget.filter(b => !b.op).map(b => ({...b, local: 1}))];
@@ -548,7 +549,7 @@ function vCar(c) {
   `<div class="grid g2"><div>${carCard(c).replace('class="glass card car"', 'class="glass card"')}
   <h2>Действия</h2>${actions(c.name)}${OWN ? `<div style="display:flex;gap:10px;margin-top:10px"><button class="btn sec" data-act="caredit" data-car="${esc(c.name)}" style="flex:1">Изменить машину</button><button class="btn sec" data-act="cardel" data-car="${esc(c.name)}" style="flex:1;color:var(--red)">Удалить</button></div>` : ''}
   <h2>Данные</h2><div class="glass card"><dl class="kv">${fields.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v ?? '—')}</dd>`).join('')}</dl></div>
-  <h2>Страховки</h2><div class="glass">${pol.map(p => { const d = days(p.to); return `<div class="row"><div class="l"><b>${p.type} · ${esc(p.co)}</b><small>${esc(p.num)} · до ${fd(p.to)}</small></div><div class="r"><span class="badge b-${stD(d)}">${dlabel(d)}</span></div></div>`; }).join('') || '<div class="row muted">Нет данных</div>'}</div></div>
+  <h2>Страховки</h2><div class="glass">${pol.map(p => { const d = days(p.to); return `<div class="row"><div class="l"><b>${p.type} · ${esc(p.co)}</b><small>${esc(p.num)} · до ${fd(p.to)}${(APPCFG.features || {}).insurance_next_payment && p.nextDate ? ` · след. платёж ${fd(p.nextDate)}${p.nextSum ? ' · ' + rub(p.nextSum) : ''}` : ''}</small></div><div class="r"><span class="badge b-${stD(d)}">${dlabel(d)}</span></div></div>`; }).join('') || '<div class="row muted">Нет данных</div>'}</div></div>
   <div><h2>Следующее ТО</h2>${c.plan ? planBlock(c, true) : '<div class="glass card muted">План ТО не найден</div>'}
   <h2>История ТО и ремонтов</h2><div class="glass">${c.svc.map(svcRow).join('') || '<div class="row muted">Нет записей</div>'}</div>
   <h2>История пробега</h2><div class="glass">${c.mil.map(m => `<div class="row"><div class="l">${m.date ? fd(pd(m.date)) : '—'}${m.local ? '<span class="tag new">новое</span>' : ''}${m.note ? `<small>${esc(m.note)}</small>` : ''}</div><div class="r">${km(m.km)}</div></div>`).join('')}</div></div></div>`;
@@ -1174,6 +1175,6 @@ theme(); render();
   if (srvOn()) VAULT.persist(); render(); srvSync(); })();
 </script>
 <script>if ('serviceWorker' in navigator && location.protocol === 'https:') { let rl = false; navigator.serviceWorker.addEventListener('controllerchange', () => { if (!rl) { rl = true; location.reload(); } });
-  navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => r.update()).catch(() => {}); }</script><script src="updlog.js?v=17a4a5b5" defer></script>
+  navigator.serviceWorker.register('sw.js', {updateViaCache: 'none'}).then(r => r.update()).catch(() => {}); }</script><script src="updlog.js?v=3dfe08ae" defer></script>
 </body>
 </html>
